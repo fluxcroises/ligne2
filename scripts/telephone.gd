@@ -145,6 +145,7 @@ func _home() -> void:
 	_button("Déductions" + (" (%d)" % open_deductions if open_deductions > 0 else ""), _show.bind(_deductions))
 	var unread := Enquete.unread_count()
 	_button("Messages" + (" · %d nouveau%s" % [unread, "x" if unread > 1 else ""] if unread > 0 else ""), _show.bind(_messages))
+	_button("Recherche", _show.bind(_search))
 	_button("Plan", _show.bind(_plan))
 	_focus_first()
 
@@ -189,9 +190,49 @@ func _thread(contact: String) -> void:
 		m.read = true
 		_text("%s · %s" % [m.from, m.time], DIM)
 		if m.evidence != "":
-			_picture(load("res://textures/photo_%s.png" % m.evidence))
+			_picture(Enquete.evidence_image(m.evidence))
 		_text(m.text)
 	_focus_last()
+
+
+func _search() -> void:
+	_begin("Recherche")
+	if not Enquete.has_network():
+		_text("Pas de réseau. Remontez à la surface pour chercher en ligne.", UiTheme.ALERT)
+		_focus_first()
+		return
+	_text("Suggestions :", DIM)
+	for s in Chapitre1.SEARCHES:
+		if Enquete.check(s.if):
+			_button(s.query, _run_search.bind(s))
+	_focus_first()
+
+
+func _run_search(s: Dictionary) -> void:
+	if not Enquete.has_network():
+		toast("Pas de réseau.")
+		return
+	if not Enquete.use_battery(Enquete.SEARCH_COST):
+		toast("Batterie vide.")
+		return
+	_show(_search_results.bind(s))
+
+
+func _search_results(s: Dictionary) -> void:
+	_begin("« %s »" % s.query)
+	for r in s.results:
+		Enquete.apply(r)
+		_text("%s · %s" % [r.author, r.time], DIM)
+		var id: String = r.get("evidence", "")
+		if id != "":
+			_picture(Enquete.evidence_image(id))
+		_text(r.text)
+		if id != "" and not Enquete.has_evidence(id):
+			_button("Enregistrer dans le dossier", func() -> void:
+				Enquete.add_evidence(id, Enquete.evidence_image(id))
+				toast("Ajouté au dossier : " + Chapitre1.EVIDENCE[id].title)
+				_refresh())
+	_focus_first()
 
 
 func _deductions() -> void:
@@ -315,7 +356,8 @@ func _photo_target() -> Dictionary:
 	if not cam:
 		return {}
 	var from := cam.global_position
-	var query := PhysicsRayQueryParameters3D.create(from, from - cam.global_transform.basis.z * 8.0)
+	# couche 1 seulement : la vitre du guichet (couche 2) ne gêne pas la photo
+	var query := PhysicsRayQueryParameters3D.create(from, from - cam.global_transform.basis.z * 8.0, 1)
 	if _player:
 		query.exclude = [_player.get_rid()]
 	var hit := cam.get_world_3d().direct_space_state.intersect_ray(query)

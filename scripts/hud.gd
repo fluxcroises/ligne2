@@ -75,5 +75,5 @@ func _on_focus_changed(target: Examinable) -> void:
 func _on_examined(target: Examinable) -> void:
 	if target is Personnage:
 		return  # on lui parle : c'est la boîte de dialogue qui prend la main
-	_panel_text.text = "%s\n%s" % [target.title.to_upper(), target.description]
+	_panel_text.text = "%s\n%s" % [target.title.to_upper(), target.describe()]
 	_panel.visible = not _panel.visible

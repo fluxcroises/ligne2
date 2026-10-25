@@ -73,6 +73,14 @@ zone_max={
 "type": "vec3",
 "value": Vector3(0, 0, 0)
 }
+zone2_min={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+zone2_max={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
 fog_color={
 "type": "vec3",
 "value": Vector3(0.81, 0.86, 0.89)

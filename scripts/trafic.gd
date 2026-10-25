@@ -9,7 +9,7 @@ const CYCLE := 94.0
 const APPROACH := 110.0     # distance d'où la rame arrive, et où elle disparaît
 
 ## Heure de jeu au lancement, en minutes : le chapitre 1 commence vers 23 h 05.
-var clock_start := 23 * 60 + 5
+var clock_start := Chapitre1.START
 var time := 0.0
 var trains: Array[MF01] = []
 var siel_materials: Array[ShaderMaterial] = []
@@ -76,10 +76,15 @@ func is_moving(train: MF01) -> bool:
 	return state(train).v != 0.0
 
 
+## Heure de jeu, en minutes depuis minuit (peut dépasser 24 h après minuit).
+func minutes() -> int:
+	return clock_start + int(time / 60.0)
+
+
 ## Heure de jeu « hh:mm ».
 func clock_text() -> String:
-	var minutes := (clock_start + int(time / 60.0)) % (24 * 60)
-	return "%02d:%02d" % [minutes / 60, minutes % 60]
+	var m := minutes() % (24 * 60)
+	return "%02d:%02d" % [m / 60, m % 60]
 
 
 func _physics_process(delta: float) -> void:

@@ -44,7 +44,12 @@ var night := true
 var underground := false
 var _builder := PsxBuilder.new()
 var _lanterns: Array[Vector3] = []
-var _under_lamps: Array[Vector3] = [Vector3(0, -1.1, 5.5), Vector3(0, -1.1, 9.5), Vector3(0, -1.1, 13.2), Vector3(0, -3.0, 17.2)]
+var _under_lamps: Array[Vector3] = [Vector3(0, -1.1, 5.5), Vector3(0, -1.1, 9.5), Vector3(0, -1.1, 13.2), Vector3(0, -3.0, 17.2),
+	Vector3(0, -1.6, 2.0)]   # bas du premier escalier
+## Personnages du chapitre, par identifiant de dialogue.
+var people := {}
+var loge_door: Node3D
+var kiosk_shutter: Node3D
 var _player: Node3D
 var _collisions: StaticBody3D
 var trafic: Trafic
@@ -68,13 +73,19 @@ func _ready() -> void:
 	_build_buildings()
 	_build_trees()
 	_build_passage()
+	_build_ticket_hall()
 	_build_kiosk()
 	_build_clues()
 	_place_people()
+	var chapter := preload("res://scripts/chapitre_1_jeu.gd").new()
+	chapter.name = "Chapitre1"
+	add_child(chapter)
 	_builder.build(self)
 	RenderingServer.global_shader_parameter_set("zone_color", Vector3(0.98, 0.97, 0.92))
 	RenderingServer.global_shader_parameter_set("zone_min", Vector3(-31.0, -1000.0, 19.6))
 	RenderingServer.global_shader_parameter_set("zone_max", Vector3(31.0, -0.3, 34.6))
+	RenderingServer.global_shader_parameter_set("zone2_min", Vector3(HX + 0.05, CY - 0.1, HALL_Z0 - 0.05))
+	RenderingServer.global_shader_parameter_set("zone2_max", Vector3(LOGE_X + 0.1, CC + 0.1, HALL_Z1 + 0.05))
 	set_night(night)
 
 
@@ -298,7 +309,9 @@ func _build_entrance() -> void:
 		box(M.pierreS, 2 * HX, 3.8 + top, 0.5, 0, (top - 3.8) / 2, Z0 + i * 0.5 + 0.25, 2, 1)
 	# murs carrelés de la trémie et du couloir
 	plane(M.carrelage, 17, 3.6, -HX, -1.8, 5.5, PI / 2, 22, 5)
-	plane(M.carrelage, 17, 3.6, HX, -1.8, 5.5, PI / 2, 22, 5)
+	# côté est, le mur s'ouvre sur la salle des billets (z 5 à 11)
+	plane(M.carrelage, HALL_Z0 + 3, 3.6, HX, -1.8, (HALL_Z0 - 3) / 2, PI / 2, (HALL_Z0 + 3) * 1.3, 5)
+	plane(M.carrelage, 14 - HALL_Z1, 3.6, HX, -1.8, (HALL_Z1 + 14) / 2, PI / 2, (14 - HALL_Z1) * 1.3, 5)
 	plane(M.carrelage, 2 * HX, 0.95, 0, -0.47, Z1, 0, 3, 1.2)
 	plane(M.globes, 2.1, 0.5, 0, -0.62, Z1 - 0.02, 0)
 	rect(M.carrelage, -HX, Z1, HX, 14, -0.92, 0.8, PI / 2)
@@ -311,6 +324,7 @@ func _build_entrance() -> void:
 	plane(M.carrelage, 6.3, 5.9, HX, -3.85, 17.15, PI / 2, 8, 7)
 	plane(M.carrelage, 2 * HX, Vector2(6, 3.06).length(), 0, (-0.92 - 3.98) / 2, 17, 0, 3, 8, -PI / 2 + atan2(3.06, 6))
 	plane(M.sortieQ, 1.1, 0.28, 0, -1.25, 14.05, 0)
+	box(M.fonteDark, 1.12, 0.3, 0.01, 0, -1.25, 14.035)   # dos du panneau, vu du couloir
 	plane(M.plaque, 1.4, 0.36, -HX + 0.02, -1.6, 8, PI / 2)
 
 
@@ -727,6 +741,153 @@ func _sign_from_texture(tex: Texture2D) -> ShaderMaterial:
 	return m
 
 
+# --- Salle des billets : guichet, loge de l'agent, automates, portillons -------
+# D'après des photos prises comme modèles : guichet « Services » à bandeau turquoise, vitre,
+# bas gris foncé, porte de la loge ; automates « Tickets » ; portillons inox à tripode.
+# La salle s'ouvre sur le côté est du couloir, entre les deux escaliers ; la loge est derrière.
+
+const CY := -3.24              # sol du couloir
+const CC := -0.92              # plafond du couloir
+const HALL_X := 6.0            # mur du guichet
+const HALL_Z0 := 5.0
+const HALL_Z1 := 11.0
+const LOGE_X := 8.6            # fond de la loge
+const LOGE_Z1 := 9.2           # mur nord de la loge
+const WINDOW := Vector4(5.9, 8.1, -2.19, -1.24)   # vitre : z0, z1, y0, y1
+const DOOR := Vector2(8.3, 9.1)                    # porte de la loge : z0, z1
+const SYLVAIN_GUICHET := Vector3(7.0, CY, 7.0)
+const SYLVAIN_QUAI := Vector3(-6.0, PY, 21.2)
+const GATES_Z := 12.0          # ligne des portillons
+
+
+func _build_ticket_hall() -> void:
+	var white := _mat("blanc", 0xe6e5e0)
+	var grey := _mat("blanc", 0x4b4d52)
+	var teal := _sign_from_texture(Panneaux.band(self, "i", "Services"))
+	var tickets := _sign_from_texture(Panneaux.band(self, "T", "Tickets"))
+	teal.set_shader_parameter("emission", Vector3(0.8, 0.8, 0.8))
+	tickets.set_shader_parameter("emission", Vector3(0.8, 0.8, 0.8))
+	var h := CC - CY
+	# sol, plafond, murs latéraux de la salle
+	rect(M.pierreS, HX, HALL_Z0, HALL_X, HALL_Z1, CY, 1.2)
+	rect(M.carrelage, HX, HALL_Z0, HALL_X, HALL_Z1, CC, 0.8, PI / 2)
+	for z in [HALL_Z0, HALL_Z1]:
+		plane(M.carreau, HALL_X - HX, h, (HX + HALL_X) / 2, (CY + CC) / 2, z, 0, (HALL_X - HX) / TW, h / TH)
+	# mur du guichet, percé de la vitre et de la porte de la loge
+	var x := HALL_X + 0.06
+	_wall_box(white, x, HALL_Z0, WINDOW.x, CY, CC)
+	_wall_box(white, x, WINDOW.x, WINDOW.y, WINDOW.w, CC)
+	_wall_box(grey, x, WINDOW.x, WINDOW.y, CY, WINDOW.z)
+	_wall_box(white, x, WINDOW.y, DOOR.x, CY, CC)
+	_wall_box(white, x, DOOR.x, DOOR.y, -1.2, CC)
+	_wall_box(white, x, DOOR.y, HALL_Z1, CY, CC)
+	box(grey, 0.04, 1.0, HALL_Z1 - DOOR.y, HALL_X - 0.01, CY + 0.5, (DOOR.y + HALL_Z1) / 2)
+	box(grey, 0.04, 1.0, WINDOW.x - HALL_Z0, HALL_X - 0.01, CY + 0.5, (HALL_Z0 + WINDOW.x) / 2)
+	box(white, 0.3, 0.05, WINDOW.y - WINDOW.x, HALL_X - 0.12, WINDOW.z, (WINDOW.x + WINDOW.y) / 2)   # tablette
+	box(M.inox, 0.03, 0.03, WINDOW.y - WINDOW.x, HALL_X, WINDOW.w - 0.02, (WINDOW.x + WINDOW.y) / 2)
+	# bandeau « Services » au-dessus de la vitre et de la porte, « Tickets » au-dessus des automates
+	plane(teal, DOOR.y - HALL_Z0 - 0.4, 0.34, HALL_X - 0.04, -1.08, (HALL_Z0 + 0.4 + DOOR.y) / 2, -PI / 2)
+	plane(tickets, HALL_Z1 - DOOR.y - 0.2, 0.3, HALL_X - 0.04, -1.08, (DOOR.y + HALL_Z1) / 2, -PI / 2)
+	# petits carreaux de couleur sur le blanc, comme sur la photo
+	var accents := [0xd8452f, 0x3a6fd8, 0x8a3ad8, 0x18b0a8, 0xe8a03a]
+	for i in 7:
+		box(_mat("blanc", accents[i % accents.size()]), 0.02, 0.07, 0.3, HX + 0.03, -2.0 + (i % 3) * 0.35, 3.4 + i * 0.25)
+	box(M.neon, 2.4, 0.05, 0.2, 3.6, CC - 0.03, 8.0)                       # néon de la salle
+	box(M.neon, 1.2, 0.05, 0.15, 7.3, CC - 0.03, 7.2)                       # néon de la loge
+	# automates : un « Tickets » blanc et gris, une borne violette
+	box(_mat("blanc", 0xd8d8d4), 0.45, 1.7, 0.7, HALL_X - 0.24, CY + 0.85, 9.7)
+	box(M.noir, 0.02, 0.3, 0.4, HALL_X - 0.47, CY + 1.25, 9.7)
+	box(grey, 0.02, 0.5, 0.5, HALL_X - 0.47, CY + 0.55, 9.7)
+	box(_mat("blanc", 0x7a3aa8), 0.4, 1.4, 0.5, HALL_X - 0.21, CY + 0.7, 10.5)
+	box(M.noir, 0.02, 0.22, 0.3, HALL_X - 0.42, CY + 1.05, 10.5)
+
+	# la loge : sol, plafond, murs, bureau, cahier, casier
+	rect(M.sol, HALL_X, HALL_Z0, LOGE_X, LOGE_Z1, CY, 2.4)
+	rect(white, HALL_X, HALL_Z0, LOGE_X, LOGE_Z1, CC, 2.0, PI / 2)
+	plane(white, LOGE_Z1 - HALL_Z0, h, LOGE_X, (CY + CC) / 2, (HALL_Z0 + LOGE_Z1) / 2, -PI / 2)
+	plane(white, LOGE_X - HALL_X, h, (HALL_X + LOGE_X) / 2, (CY + CC) / 2, LOGE_Z1, PI)
+	plane(white, LOGE_X - HALL_X, h, (HALL_X + LOGE_X) / 2, (CY + CC) / 2, HALL_Z0, 0)
+	box(grey, 0.55, 0.05, 2.0, HALL_X + 0.4, CY + 0.75, 7.0)            # comptoir derrière la vitre
+	box(grey, 0.5, 0.05, 1.4, LOGE_X - 0.3, CY + 0.85, 6.3)            # bureau du fond
+	box(grey, 0.05, 0.85, 1.4, LOGE_X - 0.3, CY + 0.42, 6.3)
+	box(M.noir, 0.3, 0.25, 0.04, LOGE_X - 0.25, CY + 1.05, 6.0)        # écran de surveillance
+	box(_mat("blanc", 0x5a6a7a), 0.45, 1.8, 0.5, LOGE_X - 0.25, CY + 0.9, 8.75)   # casier
+	box(M.inox, 0.02, 0.04, 0.1, LOGE_X - 0.48, CY + 1.0, 8.6)
+	var cahier := Examinable.new()
+	cahier.title = "Cahier de service"
+	cahier.description = "Ouvert à la page de mardi. « 23 h 08 : intervention maintenance, voie 1, porte de service. » Rien de tel dans le planning affiché au mur."
+	cahier.evidence_id = "cahier"
+	cahier.photo_range = 1.8
+	cahier.position = Vector3(LOGE_X - 0.3, CY + 0.88, 6.5)
+	_examinable_shape(cahier, Vector3(0.35, 0.1, 0.4))
+	add_child(cahier)
+	box(white, 0.22, 0.015, 0.3, LOGE_X - 0.3, CY + 0.88, 6.5)
+	box(_mat("blanc", 0x2a3a6a), 0.23, 0.01, 0.31, LOGE_X - 0.3, CY + 0.87, 6.5)
+	var casier := Examinable.new()
+	casier.title = "Casier de Sylvain"
+	casier.locked_description = "Un casier métallique fermé par un cadenas à code. Sans raison sérieuse, pas question de le forcer."
+	casier.description = "Vous forcez le cadenas. Derrière une veste pliée, une enveloppe blanche : six billets de 50 € neufs."
+	casier.examine_condition = "solved:faux_agent"
+	casier.examine_evidence = "billet"
+	casier.position = Vector3(LOGE_X - 0.25, CY + 0.9, 8.75)
+	_examinable_shape(casier, Vector3(0.5, 1.8, 0.55))
+	add_child(casier)
+
+	# porte de la loge, sur charnière (ouverte pendant les rondes de Sylvain)
+	loge_door = Node3D.new()
+	loge_door.position = Vector3(HALL_X + 0.06, CY, DOOR.y)
+	add_child(loge_door)
+	var leaf := PsxBuilder.new()
+	leaf.add(PsxGeo.box(0.05, 2.02, DOOR.y - DOOR.x), grey, PsxGeo.xf(Vector3(0, 1.01, -(DOOR.y - DOOR.x) / 2)))
+	leaf.add(PsxGeo.box(0.07, 0.04, 0.12), M.inox, PsxGeo.xf(Vector3(0, 1.0, -(DOOR.y - DOOR.x) + 0.1)))
+	leaf.build(loge_door)
+	var leaf_body := StaticBody3D.new()
+	var leaf_shape := CollisionShape3D.new()
+	leaf_shape.shape = BoxShape3D.new()
+	leaf_shape.shape.size = Vector3(0.05, 2.02, DOOR.y - DOOR.x)
+	leaf_shape.position = Vector3(0, 1.01, -(DOOR.y - DOOR.x) / 2)
+	leaf_body.add_child(leaf_shape)
+	loge_door.add_child(leaf_body)
+
+	_build_gates()
+
+
+## Mur vertical (boîte) dans le plan x, de z0 à z1 et de y0 à y1.
+func _wall_box(m: Material, x: float, z0: float, z1: float, y0: float, y1: float) -> void:
+	box(m, 0.12, y1 - y0, z1 - z0, x, (y0 + y1) / 2, (z0 + z1) / 2, (z1 - z0) / 2, (y1 - y0) / 2)
+
+
+## Ligne de portillons en travers du couloir, avant le second escalier : trois caissons inox,
+## deux couloirs de passage, tripodes, et derrière, les poteaux des portes anti-fraude.
+func _build_gates() -> void:
+	var steel := _mat("blanc", 0x6e7174)
+	var steel_light := _mat("blanc", 0xb2b5b8)
+	var green := _mat("blanc", 0x2fa38a)
+	var arrow := _mat("blanc", 0x39d06a, false, true)
+	var red := _mat("blanc", 0xc8281e)
+	var purple := _mat("blanc", 0xb69ad8)
+	for i in 3:
+		var x := -0.97 + i * 0.97
+		box(steel, 0.3, 0.9, 1.2, x, CY + 0.45, GATES_Z)
+		box(steel_light, 0.32, 0.12, 1.22, x, CY + 0.96, GATES_Z)               # dessus
+		box(steel_light, 0.32, 0.18, 0.3, x, CY + 1.08, GATES_Z - 0.45)          # tête arrondie
+		add(PsxGeo.cylinder(0.08, 0.08, 0.01, 8), purple, Vector3(x, CY + 1.03, GATES_Z - 0.15))   # lecteur Navigo
+		box(M.noir, 0.01, 0.16, 0.08, x - 0.155, CY + 0.6, GATES_Z - 0.5)
+		box(arrow, 0.012, 0.04, 0.05, x - 0.157, CY + 0.62, GATES_Z - 0.5)
+		box(red, 0.01, 0.1, 0.1, x - 0.155, CY + 0.42, GATES_Z - 0.5)
+		if i < 2:
+			# tripode côté couloir de passage (vers +x)
+			for k in 3:
+				var a := k * TAU / 3
+				add(PsxGeo.cylinder(0.018, 0.018, 0.42, 4), M.inox,
+					Vector3(x + 0.15 + 0.2 * cos(a) * 0.5 + 0.1, CY + 0.88 + 0.2 * sin(a) * 0.5, GATES_Z - 0.2), Vector3(0, 0, PI / 2 + a * 0.3))
+		# poteau de la porte anti-fraude, peint en vert en haut, battant ouvert
+		box(steel_light, 0.08, 1.7, 0.18, x, CY + 0.85, GATES_Z + 0.75)
+		box(green, 0.085, 0.35, 0.185, x, CY + 1.55, GATES_Z + 0.75)
+		add(PsxGeo.cylinder(0.14, 0.14, 0.28, 8), steel_light, Vector3(x + (0.2 if i < 2 else -0.2), CY + 1.1, GATES_Z + 0.75))
+		_solid(Vector3(0.3, 1.0, 1.2), Vector3(x, CY + 0.5, GATES_Z))
+
+
 # --- Kiosque à journaux et personnages du chapitre 1 ---------------------------
 
 const KIOSK := Vector3(-1.5, 0, 22.6)
@@ -744,26 +905,34 @@ func _build_kiosk() -> void:
 			var m := _mat("blanc", colors[(row * 2 + col) % colors.size()])
 			box(m, 0.22, 0.3, 0.02, KIOSK.x - 0.65 + col * 0.26, 0.75 + row * 0.36, KIOSK.z - 0.71)
 	_solid(Vector3(2.0, 2.2, 1.4), KIOSK + Vector3(0, 1.1, 0))
+	# rideau de fer, baissé à la fermeture (23 h 20)
+	kiosk_shutter = Node3D.new()
+	add_child(kiosk_shutter)
+	var shutter := PsxBuilder.new()
+	shutter.add(PsxGeo.box(1.7, 1.5, 0.03), _mat("blanc", 0x5a5e58), PsxGeo.xf(Vector3(KIOSK.x, 1.15, KIOSK.z - 0.73)))
+	shutter.build(kiosk_shutter)
+	kiosk_shutter.hide()
 
 
 ## Les personnages du chapitre 1, à leur poste (le chapitre 6 réglera leurs horaires).
 func _place_people() -> void:
-	var people := [
+	var cast := [
 		["sylvain", "Sylvain, agent de station", {"coat": Color("#1f2a4a"), "pants": Color("#1b1f2b"), "skin": Color("#9c6f52"), "hair": Color("#1e1a18")},
-			false, Vector3(-6.0, PY, 21.2), -PI / 2],
+			false, SYLVAIN_GUICHET, PI / 2],
 		["jo", "Un homme endormi", {"coat": Color("#4d463c"), "pants": Color("#3a3836"), "skin": Color("#b58a6c"), "hair": Color("#2a2420"), "hat": Color("#6a2a2a")},
-			true, Vector3(0.85, -3.24, 11.0), PI / 2],
+			true, Vector3(0.85, -3.24, 13.3), PI / 2],
 		["roche", "Mme Roche, kiosquière", {"coat": Color("#6b4a36"), "pants": Color("#3a3230"), "skin": Color("#d8b49a"), "hair": Color("#b5b0aa")},
 			false, KIOSK + Vector3(1.4, 0, -0.6), 0.0],
 		["gardien", "Le gardien du parc", {"coat": Color("#2f4a36"), "pants": Color("#24262a"), "skin": Color("#c49678"), "hair": Color("#3a3028"), "hat": Color("#24362a")},
 			false, Vector3(ROT.x + 1.3, 0, 13.6), -PI / 2],   # devant la grille du parc
 	]
-	for p in people:
+	for p in cast:
 		var person := Personnage.new(p[0], p[1], p[2], p[3])
 		person.name = p[0].capitalize()
 		person.position = p[4]
 		person.rotation.y = p[5]
 		add_child(person)
+		people[p[0]] = person
 
 
 # --- Indices du chapitre 1 (provisoires) --------------------------------------
@@ -853,7 +1022,11 @@ func _build_colliders() -> Array[CollisionShape3D]:
 	_ramp(Vector3(0, -3.24, 14), Vector3(0, PY, ZA), 2 * HX)
 	_solid(Vector3(2 * HX, 0.2, 14 - Z1), Vector3(0, -3.34, (Z1 + 14) / 2))
 	for sx in [-1, 1]:
-		_solid(Vector3(0.2, 3.6, 17), Vector3(sx * (HX + 0.1), -1.8, 5.5))
+		if sx < 0:
+			_solid(Vector3(0.2, 3.6, 17), Vector3(sx * (HX + 0.1), -1.8, 5.5))
+		else:   # ouverture sur la salle des billets
+			_solid(Vector3(0.2, 3.6, HALL_Z0 + 3), Vector3(HX + 0.1, -1.8, (HALL_Z0 - 3) / 2))
+			_solid(Vector3(0.2, 3.6, 14 - HALL_Z1), Vector3(HX + 0.1, -1.8, (HALL_Z1 + 14) / 2))
 		_solid(Vector3(0.2, 5.9, 6.3), Vector3(sx * (HX + 0.1), -3.85, 17.15))
 
 	# Les deux quais, percés par les escaliers du passage.
@@ -884,6 +1057,30 @@ func _build_colliders() -> Array[CollisionShape3D]:
 		_solid(Vector3(0.06, 1.1, PW), Vector3(PX1, PY + 0.55, zw + inward * PW / 2))
 		_solid(Vector3(PX1 - PX0, PY - PFLOOR, 0.2), Vector3((PX0 + PX1) / 2, (PY + PFLOOR) / 2, zi + inward * 0.1))
 		_ramp(Vector3(PX0, PY, zw + inward * PW / 2), Vector3(PX1, PFLOOR, zw + inward * PW / 2), PW)
+
+	# Salle des billets et loge (la vitre du guichet est sur la couche 2 : elle arrête le
+	# détective, pas son regard ni ses photos).
+	_solid(Vector3(LOGE_X - HX, 0.2, HALL_Z1 - HALL_Z0), Vector3((HX + LOGE_X) / 2, CY - 0.1, (HALL_Z0 + HALL_Z1) / 2))
+	_solid(Vector3(LOGE_X - HX, 2.4, 0.2), Vector3((HX + LOGE_X) / 2, -2.1, HALL_Z0 - 0.1))
+	_solid(Vector3(HALL_X - HX, 2.4, 0.2), Vector3((HX + HALL_X) / 2, -2.1, HALL_Z1 + 0.1))
+	_solid(Vector3(0.2, 2.4, LOGE_Z1 - HALL_Z0), Vector3(LOGE_X + 0.1, -2.1, (HALL_Z0 + LOGE_Z1) / 2))
+	_solid(Vector3(LOGE_X - HALL_X, 2.4, 0.2), Vector3((HALL_X + LOGE_X) / 2, -2.1, LOGE_Z1 + 0.1))
+	for seg in [[HALL_Z0, WINDOW.x], [WINDOW.y, DOOR.x], [DOOR.y, HALL_Z1]]:
+		_solid(Vector3(0.12, 2.4, seg[1] - seg[0]), Vector3(HALL_X + 0.06, -2.1, (seg[0] + seg[1]) / 2))
+	_solid(Vector3(0.12, WINDOW.z - CY, WINDOW.y - WINDOW.x), Vector3(HALL_X + 0.06, (CY + WINDOW.z) / 2, (WINDOW.x + WINDOW.y) / 2))
+	var glass := StaticBody3D.new()
+	glass.collision_layer = 2
+	var pane := CollisionShape3D.new()
+	pane.shape = BoxShape3D.new()
+	pane.shape.size = Vector3(0.05, WINDOW.w - WINDOW.z, WINDOW.y - WINDOW.x)
+	pane.position = Vector3(HALL_X + 0.06, (WINDOW.z + WINDOW.w) / 2, (WINDOW.x + WINDOW.y) / 2)
+	glass.add_child(pane)
+	add_child(glass)
+	_solid(Vector3(0.55, 0.8, 2.0), Vector3(HALL_X + 0.4, CY + 0.4, 7.0))
+	_solid(Vector3(0.5, 0.9, 1.4), Vector3(LOGE_X - 0.3, CY + 0.45, 6.3))
+	_solid(Vector3(0.45, 1.8, 0.5), Vector3(LOGE_X - 0.25, CY + 0.9, 8.75))
+	_solid(Vector3(0.45, 1.7, 0.7), Vector3(HALL_X - 0.24, CY + 0.85, 9.7))
+	_solid(Vector3(0.4, 1.4, 0.5), Vector3(HALL_X - 0.21, CY + 0.7, 10.5))
 
 	# Passage sous les voies.
 	_solid(Vector3(PX2 - PX1, 0.2, ZB - ZA), Vector3((PX1 + PX2) / 2, PFLOOR - 0.1, (ZA + ZB) / 2))

@@ -25,7 +25,7 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 
 ## Où en est-on
 
-Étapes 1 à 5 du document de conception :
+Étapes 1 à 6 du document de conception :
 
 - rendu 320 × 240 agrandi sans lissage, couleurs 15 bits avec tramage ;
 - matériau PSX repris du prototype : sommets accrochés à la grille de l'écran, éclairage par
@@ -59,6 +59,19 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
   parle qu'à la vue de la photo du voyageur, Sylvain avoue une fois la déduction faite ; les
   témoignages s'ajoutent au dossier.
 
+- le chapitre 1 jouable de bout en bout : salle des billets entre les deux escaliers (guichet
+  « Services », automates, loge de l'agent avec cahier et casier), portillons avant le second
+  escalier ; Sylvain au guichet, en ronde sur le quai toutes les 20 min à partir de 23 h 18 (la
+  porte de sa loge reste alors entrouverte) ; kiosque qui ferme à 23 h 20 ; appli Recherche à la
+  surface (la photo du voyageur, publiée en ligne) ; casier ouvrable après la déduction (billets) ;
+  messages d'aide de Nadia après 10 min sans avancer ; fin du chapitre en montant dans la rame
+  direction Nation après les aveux de Sylvain (« Prochaine station : Villiers »).
+
+Déroulé du chapitre 1 : photo de Karim (Nadia) → badge sous un siège et serrure rayée au bout du
+quai (photos) → photo du voyageur (Recherche, à la surface) → cahier de la loge (photo, pendant une
+ronde) → Jo parle à la vue de la photo du voyageur → déduction dans le téléphone → aveux de
+Sylvain → rame direction Nation. Témoignages facultatifs : Mme Roche (avant 23 h 20), le gardien.
+
 L'état de l'enquête (dossier, messages, déductions, batterie, réseau, drapeaux) est dans l'autoload
 `Enquete` ; le contenu du chapitre 1 (pièces, messages, déduction finale) dans
 `scripts/chapitre_1.gd`, avec les dialogues (format décrit en tête de `DIALOGUES`).
@@ -78,7 +91,8 @@ service métallique au bout du quai. Liste des stations : plan de ligne RATP (11
 | `scripts/mf01.gd` | une rame MF01 : caisse, intérieur, portes, collisions |
 | `scripts/telephone.gd` | le téléphone et ses applis |
 | `scripts/enquete.gd` | état de l'enquête (autoload `Enquete`) |
-| `scripts/chapitre_1.gd` | contenu du chapitre 1 : pièces du dossier, messages, déductions |
+| `scripts/chapitre_1.gd` | contenu du chapitre 1 : pièces, messages, dialogues, horaires, recherches, aides |
+| `scripts/chapitre_1_jeu.gd` | déroulé du chapitre 1 : horaires, aides de Nadia, fin du chapitre |
 | `scripts/dialogue.gd`, `personnage.gd` | boîte de dialogue ; personnages low-poly |
 | `scripts/ui_theme.gd` | style commun des interfaces |
 | `scripts/panneaux.gd` | panneaux RATP dessinés par le jeu, liste des stations de la ligne 2 |

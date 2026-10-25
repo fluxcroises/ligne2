@@ -7,6 +7,7 @@ signal message_received(message: Dictionary)
 signal deduction_solved(id: String)
 
 const PHOTO_COST := 2.0
+const SEARCH_COST := 1.0
 
 var chapter := 1
 var battery := 100.0
@@ -22,6 +23,8 @@ var solved: Array[String] = []
 var flags := {}
 ## Vrai pendant un dialogue : le téléphone reste rangé.
 var in_dialogue := false
+## Messages d'aide de Nadia quand on tourne en rond.
+var hints_enabled := true
 var _outbox: Array[Dictionary] = []      # messages en attente de réseau
 
 
@@ -40,9 +43,19 @@ func has_network() -> bool:
 
 
 func clock_text() -> String:
-	var scene := get_tree().current_scene
-	var trafic := scene.get_node_or_null("Monceau/Trafic") if scene else null
+	var trafic := _trafic()
 	return trafic.clock_text() if trafic else "23:05"
+
+
+## Heure de jeu en minutes depuis minuit.
+func minutes() -> int:
+	var trafic := _trafic()
+	return trafic.minutes() if trafic else Chapitre1.START
+
+
+func _trafic() -> Node:
+	var scene := get_tree().current_scene
+	return scene.get_node_or_null("Monceau/Trafic") if scene else null
 
 
 ## Dépense de la batterie ; renvoie false si elle est vide.
@@ -71,6 +84,11 @@ func add_evidence(id: String, texture: Texture2D = null) -> bool:
 	return true
 
 
+## L'image fournie avec une pièce (photo envoyée, trouvée en ligne) : textures/photo_<pièce>.png.
+static func evidence_image(id: String) -> Texture2D:
+	return load("res://textures/%s.png" % (id if id.begins_with("photo_") else "photo_" + id))
+
+
 func add_photo(texture: Texture2D, evidence_id := "") -> void:
 	photos.append({"texture": texture, "time": clock_text(), "evidence": evidence_id})
 
@@ -90,7 +108,7 @@ func _deliver() -> void:
 		m.read = false
 		messages.append(m)
 		if m.evidence != "":
-			add_evidence(m.evidence, load("res://textures/photo_%s.png" % m.evidence))
+			add_evidence(m.evidence, evidence_image(m.evidence))
 		message_received.emit(m)
 	_outbox.clear()
 

@@ -50,6 +50,13 @@ func _process(delta: float) -> void:
 		rotation.y = lerp_angle(rotation.y, _face_target, minf(1.0, delta * 6.0))
 
 
+## Se placer à un poste, dans une orientation donnée (horaires du chapitre).
+func move_to(pos: Vector3, yaw: float) -> void:
+	position = pos
+	rotation.y = yaw
+	_face_target = NAN
+
+
 ## Se tourner vers un point (pendant le dialogue) ; NAN pour garder sa pose.
 func face(point: Vector3) -> void:
 	if sitting:

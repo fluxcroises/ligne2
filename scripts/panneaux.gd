@@ -51,6 +51,17 @@ static func direction(parent: Node, rows: Array) -> ViewportTexture:
 	return vp.get_texture()
 
 
+## Bandeau lumineux turquoise des guichets (« Services », « Tickets ») : pastille blanche
+## avec une lettre, texte blanc. 128 × 16 px.
+static func band(parent: Node, letter: String, text: String) -> ViewportTexture:
+	var vp := _viewport(parent, Vector2i(128, 16))
+	_rect(vp, Color("#18b0a8"), Rect2(0, 0, 128, 16))
+	_disc(vp, Color.TRANSPARENT, Color.WHITE, Vector2(9, 8), 6)
+	_centered(vp, letter, Color.WHITE, Vector2(9, 8), 6)
+	_text(vp, text, Color.WHITE, 10, Vector2(19, 0), true)
+	return vp.get_texture()
+
+
 ## Plan de ligne d'un quai : en-tête (Ⓜ ② terminus →), stations jusqu'au terminus,
 ## la station courante en surbrillance, bande bleu nuit en bas. 72 × 128 px.
 static func line_plan(parent: Node, from: String, terminus: String) -> ViewportTexture:

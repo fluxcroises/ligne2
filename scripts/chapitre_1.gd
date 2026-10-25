@@ -18,6 +18,8 @@ const EVIDENCE := {
 		"text": "Page du soir : « intervention maintenance » notée à 23 h 08, absente du planning officiel."},
 	"temoignage_jo": {"kind": "temoignage", "title": "Témoignage de Jo",
 		"text": "Karim est remonté vivant, accompagné d'un homme en gilet orange, sans résister."},
+	"billet": {"kind": "indice", "title": "Billets de 50 € neufs",
+		"text": "Dans le casier de Sylvain, une enveloppe blanche : six billets de 50 € neufs, aux numéros qui se suivent. L'agent a été payé."},
 	"temoignage_roche": {"kind": "temoignage", "title": "Témoignage de Mme Roche",
 		"text": "Une camionnette blanche sans logo garée devant la Rotonde vers 23 h, moteur allumé. Repartie vers la rue de Monceau."},
 	"temoignage_gardien": {"kind": "temoignage", "title": "Témoignage du gardien",
@@ -85,11 +87,13 @@ const DIALOGUES := {
 				"J'ai rien fait à Karim. Je voulais pas savoir.",
 				"Le type a parlé d'un local à Villiers. C'est tout ce que je sais. Je vous jure."],
 				"set": ["sylvain_aveu"]},
+			"billet": {"lines": ["(Il regarde l'enveloppe et ferme les yeux.)", "Vous avez fouillé mon casier. Vous avez le droit, vous ?",
+				"...C'est pas ce que vous croyez. Enfin si. C'est exactement ça."], "set": ["sylvain_billet"]},
 			"rien": {"lines": ["Je vois pas ce que vous voulez que je vous dise."]},
 		},
 		"show": {
 			"cahier": [["sylvain_pause", "cahier"], ["", "cahier_avant"]],
-			"badge": "badge", "serrure": "serrure", "photo_voyageur": "voyageur", "karim": "karim",
+			"badge": "badge", "serrure": "serrure", "photo_voyageur": "voyageur", "karim": "karim", "billet": "billet",
 			"default": "rien",
 		},
 	},
@@ -155,3 +159,51 @@ const DIALOGUES := {
 		"show": {"karim": [["gardien_deux_hommes", "karim"], ["", "karim_avant"]], "photo_voyageur": "voyageur", "default": "rien"},
 	},
 }
+
+
+## Horaires (minutes depuis minuit). Le jeu commence à 23 h 05, une minute de jeu par minute.
+const START := 23 * 60 + 5
+## Rondes de Sylvain sur le quai : toutes les 20 minutes à partir de 23 h 18, pendant 5 minutes.
+## Pendant ce temps, la porte de sa loge reste entrouverte.
+const RONDE_FIRST := 23 * 60 + 18
+const RONDE_EVERY := 20
+const RONDE_LENGTH := 5
+## Mme Roche ferme son kiosque à 23 h 20.
+const KIOSK_CLOSES := 23 * 60 + 20
+
+## Recherches en ligne (appli Recherche, seulement avec du réseau). `if` : condition pour que
+## la recherche soit proposée. Un résultat peut contenir une pièce à enregistrer au dossier.
+const SEARCHES := [
+	{"query": "métro Monceau mardi soir", "if": "", "results": [
+		{"author": "@lea_b", "time": "mardi 23:24",
+			"text": "Bloquée à Monceau depuis dix minutes. La rame est à quai, portes ouvertes, et personne dans la cabine ??"},
+		{"author": "@tomdlr", "time": "mardi 23:11",
+			"text": "Toujours le même gars de la maintenance au bout du quai à Monceau. Ils bossent jamais de jour ?",
+			"evidence": "photo_voyageur"},
+		{"author": "Actu Paris 17e", "time": "mercredi 7:02",
+			"text": "Ligne 2 : trafic interrompu une heure mardi soir à Monceau après le « malaise » d'un conducteur, selon la RATP."},
+	]},
+	{"query": "Karim Benali conducteur", "if": "", "results": [
+		{"author": "Nadia Benali", "time": "jeudi 9:40",
+			"text": "Mon frère Karim, 47 ans, conducteur sur la ligne 2, a disparu mardi soir à Monceau. La police ne cherche pas. Si vous l'avez vu, écrivez-moi."},
+	]},
+	{"query": "camionnette blanche rue de Monceau", "if": "roche_camionnette", "results": [
+		{"author": "Forum des riverains", "time": "mercredi 8:15",
+			"text": "Une camionnette blanche sans logo garée devant la Rotonde mardi soir, moteur allumé vingt minutes. Plaque en GH-, je n'ai pas vu la suite.",
+			"set": ["plaque_gh"]},
+	]},
+]
+
+## Messages d'aide de Nadia quand le joueur tourne en rond : le premier dont la condition est
+## remplie est envoyé (désactivable : Enquete.hints_enabled).
+const HINT_DELAY := 600.0
+const HINTS := [
+	["!has:badge", "Karim avait toujours son badge sur lui. S'il est descendu sur le quai, il l'a peut-être perdu là-bas."],
+	["!has:photo_voyageur", "Des gens ont dû poster des photos, ce soir-là. Cherchez en ligne, mais il faut du réseau : remontez."],
+	["!has:serrure", "Karim parlait d'une porte au bout du quai, celle qu'utilisent les équipes de maintenance."],
+	["!has:cahier", "Les agents notent tout dans un cahier, à la loge du guichet. Karim me le disait."],
+	["!jo_parle", "Il y a un homme qui dort dans le couloir. Karim lui payait parfois un café. Il voit tout, lui."],
+	["!solved:faux_agent", "Vous avez de quoi relier les pièces, non ? Faites-le dans vos déductions."],
+	["!sylvain_aveu", "L'agent de station. Mettez-le face à ce que vous savez."],
+	["sylvain_aveu", "Villiers... Allez-y. Prenez le métro direction Nation."],
+]
