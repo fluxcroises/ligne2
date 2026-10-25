@@ -26,8 +26,15 @@ var _gain := 0.0
 ## destination] ; `barriers` : garde-fous des quais, ôtés quand une rame est à quai.
 func setup(M: Dictionary, rails_y: float, floor_height: float, tracks: Array, barriers: Array[CollisionShape3D]) -> void:
 	_barriers = barriers
+	var numbers := ["052", "037"]
 	for t in tracks:
-		var train := MF01.new(M, floor_height, t[1], t[2], t[3], t[4])
+		# face avant à la girouette de la rame (un jeu de matériaux par rame)
+		var face: ShaderMaterial = M.rameFace.duplicate()
+		face.set_shader_parameter("albedo_texture", Panneaux.mf01_front(self, t[4], numbers[trains.size() % numbers.size()]))
+		face.set_shader_parameter("emission", Vector3(0.25, 0.25, 0.25))
+		var mats := M.duplicate()
+		mats.rameFace = face
+		var train := MF01.new(mats, floor_height, t[1], t[2], t[3], t[4])
 		train.position = Vector3(300, rails_y, t[0])
 		add_child(train)
 		trains.append(train)
@@ -153,7 +160,9 @@ var siel_examinables := [[], []]
 
 func _make_siel(destination: String) -> Dictionary:
 	var vp := SubViewport.new()
-	vp.size = SIEL_SIZE
+	vp.size = SIEL_SIZE * Panneaux.DETAIL
+	vp.size_2d_override = SIEL_SIZE
+	vp.size_2d_override_stretch = true
 	vp.disable_3d = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	add_child(vp)
@@ -238,8 +247,7 @@ func _disc(parent: Node, fill: Color, ring: Color, center: Vector2, letter: Stri
 
 func _text(parent: Node, s: String, color: Color, font_size: int, pos: Vector2, font: Font = null) -> Label:
 	var l := Label.new()
-	if font:
-		l.add_theme_font_override("font", font)
+	l.add_theme_font_override("font", font if font else ThemeDB.fallback_font)
 	l.text = s
 	l.position = pos
 	l.add_theme_color_override("font_color", color)

@@ -6,11 +6,14 @@ const TEXT := Color("#e8e6df")
 const DIM := Color("#8a8f99")
 const ACCENT := Color("#ffbf00")
 const ALERT := Color("#e0645a")
+## Taille du texte des interfaces (police VT323, en pixels de l'écran 320 × 240 de référence ;
+## l'interface est dessinée à la résolution de la fenêtre, donc bien plus finement).
+const FONT_SIZE := 11
 
 
 static func make() -> Theme:
 	var t := Theme.new()
-	t.default_font_size = 8
+	t.default_font_size = FONT_SIZE
 	t.set_stylebox("normal", "Button", box(Color("#1c2027"), Color.TRANSPARENT, 0, 2, 2))
 	t.set_stylebox("hover", "Button", box(Color("#262c36"), Color.TRANSPARENT, 0, 2, 2))
 	t.set_stylebox("pressed", "Button", box(Color("#2b3442"), Color.TRANSPARENT, 0, 2, 2))

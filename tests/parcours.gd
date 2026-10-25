@@ -18,8 +18,8 @@ func _initialize() -> void:
 	change_scene_to_file("res://scenes/main.tscn")
 	await process_frame
 	await process_frame
-	player = current_scene.get_node("Player")
-	station = current_scene.get_node("Monceau")
+	player = get_first_node_in_group("player")
+	station = get_first_node_in_group("lieu")
 	var trafic = station.trafic
 	# 1. de la rue au quai A
 	player.global_position = Vector3(0.225, 0.1, -8)

@@ -61,6 +61,7 @@ var trafic: Trafic
 
 
 func _ready() -> void:
+	add_to_group("lieu")
 	if not Enquete.started:   # lancé directement depuis l'éditeur, sans passer par le titre
 		Enquete.new_game()
 	Sons.playing = true
@@ -92,7 +93,7 @@ func _ready() -> void:
 	RenderingServer.global_shader_parameter_set("zone_color", Vector3(0.98, 0.97, 0.92))
 	RenderingServer.global_shader_parameter_set("zone_min", Vector3(-HALF - 1.0, -1000.0, 19.6))
 	RenderingServer.global_shader_parameter_set("zone_max", Vector3(HALF + 1.0, -0.3, 34.6))
-	RenderingServer.global_shader_parameter_set("zone2_color", Vector3(1.35, 1.36, 1.38))   # salle très claire
+	RenderingServer.global_shader_parameter_set("zone2_color", Vector3(0.98, 0.98, 0.96))
 	var hall_x := [-HALL_W * GUICHET_SIDE, LOGE_X * GUICHET_SIDE]
 	RenderingServer.global_shader_parameter_set("zone2_min", Vector3(minf(hall_x[0], hall_x[1]) - 0.1, CY - 0.1, HALL_Z0 - 0.05))
 	RenderingServer.global_shader_parameter_set("zone2_max", Vector3(maxf(hall_x[0], hall_x[1]) + 0.1, HALL_TOP + 0.1, HALL_Z1 + 0.05))
@@ -212,7 +213,7 @@ func _mat(tex: String, color := 0xffffff, alpha := false, unlit := false) -> Sha
 func _make_materials() -> void:
 	M = {
 		"paves": _mat("paves"), "trottoir": _mat("trottoir"), "pierre": _mat("pierre_taille"), "pierreS": _mat("pierre"),
-		"carrelage": _mat("carrelage"), "balus": _mat("balustrade", 0xffffff, true), "enseigne": _mat("enseigne", 0xffffff, true),
+		"carrelage": _mat("carreau_blanc"), "balus": _mat("balustrade", 0xffffff, true), "enseigne": _mat("enseigne", 0xffffff, true),
 		"plaque": _mat("plaque"), "plan": _mat("plan"), "globes": _mat("globes"), "lanterne": _mat("lanterne"),
 		"fonte": _mat("blanc", 0x24443a), "fonteDark": _mat("blanc", 0x172a23),
 		"facA": _mat("facade_a"), "facB": _mat("facade_b"), "porte": _mat("porte"), "zinc": _mat("zinc"),
@@ -222,15 +223,15 @@ func _make_materials() -> void:
 		"feuil": _mat("feuillage"), "tronc": _mat("blanc", 0x7c7464), "musee": _mat("musee", 0xffffff, true),
 		"fleche": _mat("fleche"), "cand": _mat("candelabre", 0xffffff, true), "candPost": _mat("blanc", 0x4a3b33),
 		"sortie": _mat("sortie", 0xffffff, true), "morris": _mat("blanc", 0x2c4b3c),
-		"carreau": _mat("carreau"), "sol": _mat("sol_quai"), "bande": _mat("bande"), "voie": _mat("voie"),
-		"plinthe": _mat("plinthe"), "quaiFace": _mat("blanc", 0x3c3a37), "rail": _mat("blanc", 0x9a9792),
+		"carreau": _mat("carreau_blanc"), "sol": _mat("sol_goudron"), "bande": _mat("bande"), "voie": _mat("voie"),
+		"plinthe": _mat("carreau_marron"), "quaiFace": _mat("blanc", 0x3c3a37), "rail": _mat("blanc", 0x9a9792),
 		"neon": _mat("blanc", 0xffffff, false, true), "noir": _mat("blanc", 0x040404, false, true),
 		"nom": _mat("nom_quai"), "nepas": _mat("nepas"), "direction": _mat("direction"),
 		"sortieQ": _mat("sortie_quai"), "alarme": _mat("alarme"), "repere": _mat("repere"), "descente": _mat("descente"),
 		"seat": _mat("blanc", 0x2f7a46), "inox": _mat("blanc", 0xb4b8bc), "tunnel": _mat("pierre", 0x5e5c58),
 		"service": _mat("porte_service"), "marche": _mat("sol_quai", 0xb0b0b0),
 		"platre": _mat("blanc", 0xbdbab1), "frise": _mat("frise_verte"),
-		"carreau_salle": _mat("carreau", 0xe2ecf2),   # blanc plus froid, comme sur la photo de la salle
+		"carreau_salle": _mat("carreau_blanc", 0xeef4f8),   # blanc un peu plus froid, comme sur la photo de la salle
 		"frise_verte": _mat("frise_verte"), "plinthe_verte": _mat("plinthe_verte"),
 		# rames MF01
 		"rameCote": _mat("rame_cote", 0xffffff, true), "rameFace": _mat("rame_face"),
@@ -342,7 +343,7 @@ func _build_entrance() -> void:
 	plane(M.carrelage, 2 * HX, 0.95, 0, -0.47, Z1, 0, 3, 1.2)
 	plane(M.globes, 2.1, 0.5, 0, -0.62, Z1 - 0.02, 0)
 	rect(M.carrelage, -HX, HALL_Z1, HX, 14, -0.92, 0.8, PI / 2)
-	rect(M.pierreS, -HX, HALL_Z1, HX, 14, -3.24, 1.2)
+	rect(M.sol, -HX, HALL_Z1, HX, 14, -3.24, 2.4)
 	# second escalier, vers le quai
 	for i in 12:
 		var top := -3.24 - (i + 1) * 0.27
@@ -811,7 +812,7 @@ func _build_ticket_hall() -> void:
 	var mid := (HALL_Z0 + HALL_Z1) / 2
 
 	# sol, murs carrelés, voûtains entre poutres rivetées
-	rect(_mat("trottoir", 0xa8a8a6), -HALL_W, HALL_Z0, HALL_W, HALL_Z1, CY, 2.0)
+	rect(_mat("sol_goudron", 0xc8c8c8), -HALL_W, HALL_Z0, HALL_W, HALL_Z1, CY, 2.4)
 	_tiled_wall(-HALL_W, HALL_Z0, HALL_Z1, 1.0)
 	_tiled_wall(HALL_W, HALL_Z0, LOGE_Z0, -1.0)
 	_tiled_wall(HALL_W, LOGE_Z1, HALL_Z1, -1.0)

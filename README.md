@@ -27,7 +27,9 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 
 Les sept étapes du document de conception :
 
-- rendu 320 × 240 agrandi sans lissage, couleurs 15 bits avec tramage ;
+- rendu 3D en basse résolution agrandi sans lissage (640 × 480 par défaut, 320 × 240 comme sur PS1
+  dans les réglages), couleurs 15 bits avec tramage ; interfaces dessinées à la résolution de la
+  fenêtre, en police VT323, pour rester lisibles ;
 - matériau PSX repris du prototype : sommets accrochés à la grille de l'écran, éclairage par
   sommet (soleil, néons du quai, lanternes), brouillard, jour et nuit ;
 - Monceau reconstruit d'après le prototype navigateur, aux mêmes cotes : boulevard de Courcelles,
@@ -69,7 +71,8 @@ Les sept étapes du document de conception :
   direction Nation après les aveux de Sylvain (« Prochaine station : Villiers »).
 
 - écran titre (Continuer, Nouvelle partie, Réglages, Quitter), menu pause, réglages enregistrés
-  (sensibilité, axe vertical inversé, volume, aides de Nadia, tremblement des polygones, plein écran) ;
+  (sensibilité, axe vertical inversé, volume, aides de Nadia, tremblement des polygones, résolution
+  de l'image, plein écran) ;
 - sauvegarde automatique à chaque nouvelle pièce du dossier et à chaque déduction, et en quittant
   (fichier `sauvegarde.json` dans le dossier utilisateur de Godot ; sous Windows :
   `%APPDATA%\Godot\app_userdata\Ligne 2\`) ;

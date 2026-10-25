@@ -4,7 +4,7 @@
 // - brouillard linéaire, textures sans filtrage, sans gondolage.
 // Les réglages communs (soleil, brouillard, lampes) sont des paramètres globaux,
 // définis dans les réglages du projet et pilotés par le script du lieu.
-// Les calculs se font sur des couleurs sRGB, comme dans le prototype.
+// Les calculs se font sur des couleurs sRGB, comme dans le prototype (sans conversion linéaire).
 shader_type spatial;
 render_mode unshaded, cull_disabled;
 
@@ -74,8 +74,9 @@ void fragment() {
 	vec4 t = texture(albedo_texture, UV);
 	vec3 c = t.rgb * albedo_color * light + emission * t.rgb;
 	c = mix(c, fog_color, fog);
-	// Godot attend une couleur linéaire et la reconvertit en sRGB à l'affichage.
-	ALBEDO = pow(clamp(c, 0.0, 1.0), vec3(2.2));
+	// Le rendu « Compatibility » écrit la couleur telle quelle à l'écran : on garde les calculs
+	// en sRGB, comme dans le prototype, sans conversion.
+	ALBEDO = clamp(c, 0.0, 1.0);
 	ALPHA = t.a;
 	ALPHA_SCISSOR_THRESHOLD = alpha_cut;
 }

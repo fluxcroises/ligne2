@@ -37,7 +37,7 @@ func _ready() -> void:
 		b.pressed.connect(item[1])
 		_menu.add_child(b)
 	_settings = PanneauReglages.new()
-	_settings.position = Vector2(70, 24)
+	_settings.position = Vector2(66, 10)
 	_settings.hide()
 	_settings.closed.connect(func() -> void:
 		_settings.hide()

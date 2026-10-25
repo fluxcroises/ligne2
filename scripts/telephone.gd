@@ -292,7 +292,8 @@ func _plan() -> void:
 		var unlocked := Enquete.unlocked_stations.has(name)
 		var b := _button(("> " if here else "  ") + ("• " if unlocked else "- ") + name, Callable())
 		b.add_theme_color_override("font_color", ACCENT if here else (TEXT if unlocked else DIM))
-	var trafic := get_tree().current_scene.get_node_or_null("Monceau/Trafic")
+	var place := get_tree().get_first_node_in_group("lieu")
+	var trafic: Trafic = place.trafic if place else null
 	if trafic:
 		_text("Prochains passages à Monceau :", ACCENT)
 		for train in trafic.trains:
@@ -332,7 +333,8 @@ func _take_photo() -> void:
 	_viewfinder.hide()
 	_toast.hide()
 	await RenderingServer.frame_post_draw
-	var texture := ImageTexture.create_from_image(get_viewport().get_texture().get_image())
+	# la photo, c'est l'image du monde 3D seule, sans l'interface
+	var texture := ImageTexture.create_from_image(_player.get_viewport().get_texture().get_image())
 	_viewfinder.show()
 	_flash.color.a = 0.8
 	var item: Examinable = target.get("item")
@@ -353,7 +355,7 @@ func _take_photo() -> void:
 
 ## L'objet au centre du viseur, s'il y en a un, et sa distance.
 func _photo_target() -> Dictionary:
-	var cam := get_viewport().get_camera_3d()
+	var cam := _player.get_viewport().get_camera_3d() if _player else null
 	if not cam:
 		return {}
 	var from := cam.global_position
@@ -530,7 +532,7 @@ func _label(text: String, color: Color) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_color_override("font_color", color)
-	l.add_theme_font_size_override("font_size", 8)
+	l.add_theme_font_size_override("font_size", UiTheme.FONT_SIZE)
 	return l
 
 

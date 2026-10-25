@@ -19,13 +19,13 @@ func _ready() -> void:
 	crosshair.position = Vector2(160, 120)
 	add_child(crosshair)
 
-	_prompt = _label(8)
+	_prompt = _label(UiTheme.FONT_SIZE)
 	_prompt.position = Vector2(0, 128)
 	_prompt.size = Vector2(320, 12)
 	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	add_child(_prompt)
 
-	_place = _label(8)
+	_place = _label(UiTheme.FONT_SIZE)
 	_place.add_theme_color_override("font_color", ENAMEL)
 	_place.add_theme_color_override("font_shadow_color", Color.BLACK)
 	_place.position = Vector2(6, 226)
@@ -40,7 +40,7 @@ func _ready() -> void:
 	_panel.add_theme_stylebox_override("panel", style)
 	_panel.position = Vector2(16, 168)
 	_panel.custom_minimum_size = Vector2(288, 0)
-	_panel_text = _label(8)
+	_panel_text = _label(UiTheme.FONT_SIZE)
 	_panel_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_panel_text.custom_minimum_size = Vector2(276, 0)
 	_panel.add_child(_panel_text)
@@ -54,7 +54,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	var place := get_tree().current_scene.get_node_or_null("Monceau")
+	var place := get_tree().get_first_node_in_group("lieu")
 	if _player and place and place.has_method("place_name"):
 		_place.text = place.place_name(_player.global_position)
 

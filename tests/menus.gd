@@ -35,9 +35,9 @@ func _initialize() -> void:
 	await click(current_scene, "Nouvelle partie")
 	for f in 10: await process_frame
 	print("partie lancée : ", current_scene.name, "  dossier : ", E.evidence.map(func(e): return e.id))
-	var player = current_scene.get_node("Player")
+	var player = get_first_node_in_group("player")
 	player.global_position = Vector3(-6.0, -6.45, 22.5)
-	current_scene.get_node("Monceau").trafic.time = 200.0
+	get_first_node_in_group("lieu").trafic.time = 200.0
 	for f in 10: await physics_frame
 	E.add_evidence("badge")
 	for f in 5: await process_frame
@@ -51,7 +51,7 @@ func _initialize() -> void:
 	print("retour au titre : ", current_scene.name, "  boutons : ", buttons(current_scene).map(func(b): return b.text))
 	await click(current_scene, "Continuer")
 	for f in 15: await process_frame
-	player = current_scene.get_node("Player")
+	player = get_first_node_in_group("player")
 	print("chargée : dossier=", E.evidence.map(func(e): return e.id), "  position=", player.global_position.snapped(Vector3.ONE * 0.1),
 		"  heure=", E.clock_text(), "  messages=", E.messages.size())
 	await shot("partie chargée")

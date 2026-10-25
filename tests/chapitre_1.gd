@@ -27,9 +27,9 @@ func _initialize() -> void:
 	change_scene_to_file("res://scenes/main.tscn")
 	for f in 5: await process_frame
 	var E = root.get_node("Enquete")
-	var player = current_scene.get_node("Player")
+	var player = get_first_node_in_group("player")
 	var phone = current_scene.get_node("Telephone")
-	var st = current_scene.get_node("Monceau")
+	var st = get_first_node_in_group("lieu")
 	var trafic = st.trafic
 	var ch = st.get_node("Chapitre1")
 	# 1. recherche à la surface

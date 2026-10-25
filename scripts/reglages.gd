@@ -13,6 +13,9 @@ var volume := 0.8
 var hints := true                # messages d'aide de Nadia
 var wobble := "PS1"
 var fullscreen := false
+## Résolution du rendu 3D : 320 × 240 comme sur PS1, ou plus fine pour lire les panneaux.
+const RESOLUTIONS := {"320 × 240 (PS1)": Vector2i(320, 240), "640 × 480": Vector2i(640, 480), "960 × 720": Vector2i(960, 720)}
+var resolution := "640 × 480"
 
 
 func _ready() -> void:
@@ -24,6 +27,7 @@ func _ready() -> void:
 		hints = cfg.get_value("jeu", "aides", hints)
 		wobble = cfg.get_value("image", "tremblement", wobble)
 		fullscreen = cfg.get_value("image", "plein_ecran", fullscreen)
+		resolution = cfg.get_value("image", "resolution", resolution)
 	apply()
 
 
@@ -45,5 +49,6 @@ func save() -> void:
 	cfg.set_value("son", "volume", volume)
 	cfg.set_value("image", "tremblement", wobble)
 	cfg.set_value("image", "plein_ecran", fullscreen)
+	cfg.set_value("image", "resolution", resolution)
 	cfg.save(PATH)
 	apply()

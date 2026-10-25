@@ -39,7 +39,7 @@ func pick(text_start: String) -> void:
 	print("   !! choix introuvable : ", text_start)
 
 func talk(who: String, pos: Vector3, look_at: Vector3) -> void:
-	var player = current_scene.get_node("Player")
+	var player = get_first_node_in_group("player")
 	player.global_position = pos
 	player.look_at(Vector3(look_at.x, pos.y, look_at.z)); player.rotation.x = 0; player.rotation.z = 0
 	var cam = player.get_node("Head/Camera3D")
@@ -93,5 +93,5 @@ func _initialize() -> void:
 	await shot("le gardien")
 	await pick("Partir")
 	print("dossier final : ", E.evidence.map(func(e): return e.id))
-	print("joueur libre : ", not current_scene.get_node("Player").input_locked)
+	print("joueur libre : ", not get_first_node_in_group("player").input_locked)
 	quit()

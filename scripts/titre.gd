@@ -64,7 +64,7 @@ func _ready() -> void:
 	(_menu.get_child(0) as Button).grab_focus.call_deferred()
 
 	_settings = PanneauReglages.new()
-	_settings.position = Vector2(70, 24)
+	_settings.position = Vector2(66, 10)
 	_settings.hide()
 	_settings.closed.connect(_close_settings)
 	add_child(_settings)

@@ -79,7 +79,7 @@ func has_save() -> bool:
 
 
 func _autosave() -> void:
-	if started and not _loading and get_tree().current_scene and get_tree().current_scene.has_node("Monceau"):
+	if started and not _loading and get_tree().get_first_node_in_group("lieu"):
 		save_game()
 
 
@@ -166,8 +166,8 @@ func minutes() -> int:
 
 
 func _trafic() -> Node:
-	var scene := get_tree().current_scene
-	return scene.get_node_or_null("Monceau/Trafic") if scene else null
+	var place := get_tree().get_first_node_in_group("lieu")
+	return place.trafic if place else null
 
 
 ## Dépense de la batterie ; renvoie false si elle est vide.

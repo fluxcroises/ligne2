@@ -125,7 +125,7 @@ func _show_end_screen() -> void:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(272, 0)
 		l.add_theme_color_override("font_color", line[1])
-		l.add_theme_font_size_override("font_size", 8)
+		l.add_theme_font_size_override("font_size", UiTheme.FONT_SIZE + 1)
 		col.add_child(l)
 	var tween := create_tween()
 	tween.tween_property(black, "color:a", 0.92, 2.0)

@@ -24,7 +24,7 @@ func _initialize() -> void:
 	change_scene_to_file("res://scenes/main.tscn")
 	for f in 5: await process_frame
 	var phone = current_scene.get_node("Telephone")
-	var player = current_scene.get_node("Player")
+	var player = get_first_node_in_group("player")
 	var E = root.get_node("Enquete")
 	print("messages au départ : ", E.messages.size(), "  dossier : ", E.evidence.map(func(e): return e.id))
 	await press("phone")

@@ -10,14 +10,14 @@ func _ready() -> void:
 	add_theme_stylebox_override("panel", UiTheme.box(Color(0.04, 0.05, 0.07, 0.96), Color("#3a3f48"), 1, 3, 6))
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 3)
+	col.add_theme_constant_override("separation", 2)
 	add_child(col)
 	var title := Label.new()
 	title.text = "Réglages"
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	col.add_child(title)
 
-	_slider(col, "Sensibilité de la souris", 0.3, 2.5, Reglages.mouse_sensitivity,
+	_slider(col, "Souris", 0.3, 2.5, Reglages.mouse_sensitivity,
 		func(v: float) -> void: Reglages.mouse_sensitivity = v)
 	_check(col, "Inverser l'axe vertical", Reglages.invert_y, func(on: bool) -> void: Reglages.invert_y = on)
 	_slider(col, "Volume", 0.0, 1.0, Reglages.volume, func(v: float) -> void: Reglages.volume = v)
@@ -31,6 +31,15 @@ func _ready() -> void:
 		Reglages.wobble = Reglages.WOBBLE.keys()[i]
 		Reglages.save())
 	col.add_child(wobble)
+	var res := OptionButton.new()
+	for name in Reglages.RESOLUTIONS:
+		res.add_item("Image : " + name)
+		if name == Reglages.resolution:
+			res.select(res.item_count - 1)
+	res.item_selected.connect(func(i: int) -> void:
+		Reglages.resolution = Reglages.RESOLUTIONS.keys()[i]
+		Reglages.save())
+	col.add_child(res)
 	_check(col, "Plein écran", Reglages.fullscreen, func(on: bool) -> void: Reglages.fullscreen = on)
 	var back := Button.new()
 	back.text = "Retour"
@@ -38,27 +47,31 @@ func _ready() -> void:
 		Reglages.save()
 		closed.emit())
 	col.add_child(back)
-	var first := col.get_child(2) as Control   # premier curseur
+	var first := col.get_child(1).get_child(1) as Control   # premier curseur
 	visibility_changed.connect(func() -> void:
 		if visible:
 			first.grab_focus.call_deferred())
 
 
 func _slider(col: VBoxContainer, label: String, lo: float, hi: float, value: float, on_change: Callable) -> void:
+	var row := HBoxContainer.new()
+	col.add_child(row)
 	var l := Label.new()
 	l.text = label
+	l.custom_minimum_size = Vector2(70, 0)
 	l.add_theme_color_override("font_color", UiTheme.DIM)
-	col.add_child(l)
+	row.add_child(l)
 	var s := HSlider.new()
 	s.min_value = lo
 	s.max_value = hi
 	s.step = 0.05
 	s.value = value
-	s.custom_minimum_size = Vector2(170, 10)
+	s.custom_minimum_size = Vector2(100, 10)
+	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	s.value_changed.connect(func(v: float) -> void:
 		on_change.call(v)
 		Reglages.save())
-	col.add_child(s)
+	row.add_child(s)
 
 
 func _check(col: VBoxContainer, label: String, value: bool, on_change: Callable) -> void:

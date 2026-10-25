@@ -16,6 +16,10 @@ On en a repris la disposition, les proportions et les couleurs. Aucune texture n
   panneaux de direction, plans de ligne, écrans PANAM, guichet, portillons) : elles ont servi
   uniquement de modèles. Aucune n'est reproduite dans le jeu.
 
+- Modèles fournis par Lewis : carrelage blanc biseauté, carrelage marron, face avant du MF01
+  (illustration) ; redessinés dans `carreau_blanc.png`, `carreau_marron.png` et
+  `Panneaux.mf01_front()`, sans reprise des images.
+
 ### Photos de Lewis
 
 Les textures de `textures/` issues de `textures_monceau_ps1.zip` ont été tirées des photos de Lewis.
@@ -25,6 +29,11 @@ Les textures de `textures/` issues de `textures_monceau_ps1.zip` ont été tiré
 - Ordre des stations et correspondances de la ligne 2 : plan de ligne RATP / IDFM (novembre 2023).
 - Station Monceau (quais de 75 m, sièges verts « Motte », salle de distribution des billets) :
   article Wikipédia « Monceau (métro de Paris) », licence CC BY-SA 4.0.
+
+## Police
+
+- [VT323](https://fonts.google.com/specimen/VT323), par Peter Hull, licence SIL Open Font License 1.1
+  (`fonts/OFL.txt`).
 
 ## Logiciels
 
