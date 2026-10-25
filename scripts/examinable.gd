@@ -5,3 +5,7 @@ extends StaticBody3D
 
 @export var title := ""
 @export_multiline var description := ""
+## Pièce du dossier (voir Chapitre1.EVIDENCE) ajoutée quand on photographie l'objet.
+@export var evidence_id := ""
+## Distance maximale pour qu'une photo de l'objet compte comme preuve.
+@export var photo_range := 2.5

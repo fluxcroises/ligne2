@@ -83,6 +83,7 @@ func _process(_delta: float) -> void:
 	var ug := _player.global_position.y < -2.0
 	if ug != underground:
 		underground = ug
+		Enquete.underground = ug
 		_apply_fog()
 
 
@@ -731,6 +732,7 @@ func _build_clues() -> void:
 	var door := Examinable.new()
 	door.title = "Porte de service"
 	door.description = "Porte métallique verrouillée. Autour de la serrure, des rayures fraîches dans la peinture."
+	door.evidence_id = "serrure"
 	door.position = Vector3(-29.97, PY + 1.05, 21.4)
 	_examinable_shape(door, Vector3(0.1, 2.1, 0.9))
 	add_child(door)
@@ -740,8 +742,9 @@ func _build_clues() -> void:
 	var badge := Examinable.new()
 	badge.title = "Badge RATP"
 	badge.description = "Une carte d'agent glissée sous le siège. Photo d'identité : Karim Benali."
+	badge.evidence_id = "badge"
 	badge.position = Vector3(18.95, PY + 0.01, 20.75)
-	_examinable_shape(badge, Vector3(0.25, 0.1, 0.25))
+	_examinable_shape(badge, Vector3(0.45, 0.16, 0.45))
 	add_child(badge)
 	box(M.neon, 0.09, 0.008, 0.055, 18.95, PY + 0.005, 20.75)
 

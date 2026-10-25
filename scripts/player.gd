@@ -15,6 +15,8 @@ signal examined(examinable: Examinable)
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var ray: RayCast3D = $Head/Camera3D/InteractRay
 
+## Mis à vrai quand le téléphone est ouvert : le détective ne bouge plus.
+var input_locked := false
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _bob_time := 0.0
 var _focused: Examinable = null
@@ -28,6 +30,8 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if input_locked:
+		return
 	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 	if event is InputEventMouseMotion and captured:
 		_look(-event.relative.x * mouse_sensitivity, -event.relative.y * mouse_sensitivity)
@@ -47,13 +51,13 @@ func _look(yaw: float, pitch: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	var stick := Input.get_vector("look_left", "look_right", "look_up", "look_down")
-	if stick != Vector2.ZERO:
+	if stick != Vector2.ZERO and not input_locked:
 		_look(-stick.x * pad_look_speed * delta, -stick.y * pad_look_speed * delta)
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 
-	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var input := Vector2.ZERO if input_locked else Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (transform.basis * Vector3(input.x, 0.0, input.y)).limit_length(1.0)
 	var speed := run_speed if Input.is_action_pressed("run") else walk_speed
 	var target := direction * speed

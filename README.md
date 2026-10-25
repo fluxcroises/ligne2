@@ -17,13 +17,15 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 | Regarder | Souris | Stick droit |
 | Courir | Maj | Clic stick gauche |
 | Examiner | E ou clic gauche | A / Croix |
-| Téléphone (à venir) | Tab | Y / Triangle |
+| Téléphone (sortir, ranger) | Tab | Y / Triangle |
+| Dans le téléphone | flèches, Entrée, Échap (retour), souris | croix, A, B |
+| Photographier (appareil photo) | E ou clic gauche | A / Croix |
 | Jour / nuit | N | Select |
 | Libérer la souris | Échap | Start |
 
 ## Où en est-on
 
-Étapes 1 à 3 du document de conception :
+Étapes 1 à 4 du document de conception :
 
 - rendu 320 × 240 agrandi sans lissage, couleurs 15 bits avec tramage ;
 - matériau PSX repris du prototype : sommets accrochés à la grille de l'écran, éclairage par
@@ -42,7 +44,16 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 - vraies collisions (rampes invisibles sous les marches, garde-fous de quai ôtés quand une
   rame est à quai, portes qui laissent passer une fois ouvertes) ;
 - joueur en vue subjective, visée d'objets et fenêtre d'examen ; deux indices provisoires
-  (badge de Karim sous un siège, porte de service rayée au bout du quai).
+  (badge de Karim sous un siège, porte de service rayée au bout du quai) ;
+- le téléphone, menu du jeu : appareil photo (une photo bien cadrée et prise d'assez près d'un
+  indice l'ajoute au dossier), dossier classé par chapitre, déductions (relier 2 à 4 éléments puis
+  choisir une conclusion), messages (Nadia envoie la photo de Karim au début), plan de la ligne
+  avec les prochains passages ; pas de 4G sous terre : les messages attendent la surface ;
+  batterie qui baisse à chaque photo.
+
+L'état de l'enquête (dossier, messages, déductions, batterie, réseau) est dans l'autoload
+`Enquete` ; le contenu du chapitre 1 (pièces, messages, déduction finale) dans
+`scripts/chapitre_1.gd`.
 
 Habillages dessinés d'après des photos prises comme modèles (aucun pixel copié) : passage sous
 les voies (carreaux blancs, frise brune, voûte blanche, sol gris foncé), escaliers à nez en inox
@@ -57,6 +68,9 @@ service métallique au bout du quai. Liste des stations : plan de ligne RATP (11
 | `scenes/` | `main.tscn` (Monceau), `player.tscn` |
 | `scripts/monceau.gd` | construction du lieu, collisions, jour / nuit, noms des lieux |
 | `scripts/mf01.gd` | une rame MF01 : caisse, intérieur, portes, collisions |
+| `scripts/telephone.gd` | le téléphone et ses applis |
+| `scripts/enquete.gd` | état de l'enquête (autoload `Enquete`) |
+| `scripts/chapitre_1.gd` | contenu du chapitre 1 : pièces du dossier, messages, déductions |
 | `scripts/panneaux.gd` | panneaux RATP dessinés par le jeu, liste des stations de la ligne 2 |
 | `scripts/trafic.gd` | cycle des passages, montée à bord, écrans des prochains passages, sons |
 | `scripts/psx_geo.gd`, `psx_builder.gd` | primitives à la manière de three.js, fusion par matériau |
