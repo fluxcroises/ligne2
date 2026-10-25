@@ -431,8 +431,10 @@ func _build_viewfinder() -> void:
 		vertical.position = corner + Vector2(0 if corner.x < 160 else 7, 0)
 		for r in [horizontal, vertical]:
 			r.color = Color(1, 1, 1, 0.8)
+			r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			_viewfinder.add_child(r)
 	var reticle := Panel.new()
+	reticle.mouse_filter = Control.MOUSE_FILTER_IGNORE   # la souris doit pouvoir viser
 	reticle.position = Vector2(152, 112)
 	reticle.size = Vector2(16, 16)
 	reticle.add_theme_stylebox_override("panel", UiTheme.box(Color.TRANSPARENT, Color(1, 1, 1, 0.8), 1))
@@ -447,6 +449,7 @@ func _build_viewfinder() -> void:
 	rec.color = UiTheme.ALERT
 	rec.size = Vector2(4, 4)
 	rec.position = Vector2(229, 9)
+	rec.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_viewfinder.add_child(rec)
 	_flash = ColorRect.new()
 	_flash.set_anchors_preset(Control.PRESET_FULL_RECT)

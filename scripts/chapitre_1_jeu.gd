@@ -109,12 +109,14 @@ func _show_end_screen() -> void:
 	var black := ColorRect.new()
 	black.color = Color(0, 0, 0, 0)
 	black.set_anchors_preset(Control.PRESET_FULL_RECT)
+	black.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_end_screen.add_child(black)
 	var col := VBoxContainer.new()
 	col.position = Vector2(24, 54)
 	col.size = Vector2(272, 140)
 	col.add_theme_constant_override("separation", 6)
 	col.modulate.a = 0.0
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_end_screen.add_child(col)
 	for line in [["Fin du chapitre 1", UiTheme.ACCENT], ["Monceau", UiTheme.TEXT],
 			["Karim n'a pas eu de malaise. Un faux agent l'a fait sortir par la porte de service, et Sylvain a regardé ailleurs pour quelques billets.", UiTheme.TEXT],

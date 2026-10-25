@@ -17,6 +17,9 @@ func _ready() -> void:
 	crosshair.color = Color(1, 1, 1, 0.7)
 	crosshair.size = Vector2(1, 1)
 	crosshair.position = Vector2(160, 120)
+	# rien dans le HUD ne doit arrêter la souris : souris capturée, elle « pointe » au centre
+	# de l'écran, pile sur le réticule, et ses mouvements doivent aller à la caméra
+	crosshair.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(crosshair)
 
 	_prompt = _label(UiTheme.FONT_SIZE)
@@ -32,6 +35,7 @@ func _ready() -> void:
 	add_child(_place)
 
 	_panel = PanelContainer.new()
+	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.03, 0.04, 0.06, 0.88)
 	style.border_color = Color(0.5, 0.5, 0.45)
