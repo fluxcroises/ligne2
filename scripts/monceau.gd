@@ -68,7 +68,9 @@ func _ready() -> void:
 	_build_buildings()
 	_build_trees()
 	_build_passage()
+	_build_kiosk()
 	_build_clues()
+	_place_people()
 	_builder.build(self)
 	RenderingServer.global_shader_parameter_set("zone_color", Vector3(0.98, 0.97, 0.92))
 	RenderingServer.global_shader_parameter_set("zone_min", Vector3(-31.0, -1000.0, 19.6))
@@ -723,6 +725,45 @@ func _sign_from_texture(tex: Texture2D) -> ShaderMaterial:
 	m.set_shader_parameter("albedo_color", Vector3.ONE)
 	m.set_shader_parameter("emission", Vector3(0.2, 0.2, 0.2))
 	return m
+
+
+# --- Kiosque à journaux et personnages du chapitre 1 ---------------------------
+
+const KIOSK := Vector3(-1.5, 0, 22.6)
+
+
+func _build_kiosk() -> void:
+	box(M.morris, 2.0, 2.2, 1.4, KIOSK.x, 1.1, KIOSK.z)
+	box(M.zinc, 2.4, 0.15, 1.8, KIOSK.x, 2.28, KIOSK.z)
+	box(M.fonte, 2.5, 0.25, 1.9, KIOSK.x, 2.47, KIOSK.z)
+	box(M.lanterne, 1.6, 0.18, 0.02, KIOSK.x, 1.95, KIOSK.z - 0.71)      # bandeau éclairé
+	# présentoir de magazines sur la façade côté boulevard
+	var colors := [0xd8452f, 0xe8c53a, 0x3a6fd8, 0xf2f2f2, 0x2fa05a, 0xd06aa8]
+	for row in 3:
+		for col in 6:
+			var m := _mat("blanc", colors[(row * 2 + col) % colors.size()])
+			box(m, 0.22, 0.3, 0.02, KIOSK.x - 0.65 + col * 0.26, 0.75 + row * 0.36, KIOSK.z - 0.71)
+	_solid(Vector3(2.0, 2.2, 1.4), KIOSK + Vector3(0, 1.1, 0))
+
+
+## Les personnages du chapitre 1, à leur poste (le chapitre 6 réglera leurs horaires).
+func _place_people() -> void:
+	var people := [
+		["sylvain", "Sylvain, agent de station", {"coat": Color("#1f2a4a"), "pants": Color("#1b1f2b"), "skin": Color("#9c6f52"), "hair": Color("#1e1a18")},
+			false, Vector3(-6.0, PY, 21.2), -PI / 2],
+		["jo", "Un homme endormi", {"coat": Color("#4d463c"), "pants": Color("#3a3836"), "skin": Color("#b58a6c"), "hair": Color("#2a2420"), "hat": Color("#6a2a2a")},
+			true, Vector3(0.85, -3.24, 11.0), PI / 2],
+		["roche", "Mme Roche, kiosquière", {"coat": Color("#6b4a36"), "pants": Color("#3a3230"), "skin": Color("#d8b49a"), "hair": Color("#b5b0aa")},
+			false, KIOSK + Vector3(1.4, 0, -0.6), 0.0],
+		["gardien", "Le gardien du parc", {"coat": Color("#2f4a36"), "pants": Color("#24262a"), "skin": Color("#c49678"), "hair": Color("#3a3028"), "hat": Color("#24362a")},
+			false, Vector3(ROT.x + 1.3, 0, 13.6), -PI / 2],   # devant la grille du parc
+	]
+	for p in people:
+		var person := Personnage.new(p[0], p[1], p[2], p[3])
+		person.name = p[0].capitalize()
+		person.position = p[4]
+		person.rotation.y = p[5]
+		add_child(person)
 
 
 # --- Indices du chapitre 1 (provisoires) --------------------------------------

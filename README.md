@@ -25,7 +25,7 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 
 ## Où en est-on
 
-Étapes 1 à 4 du document de conception :
+Étapes 1 à 5 du document de conception :
 
 - rendu 320 × 240 agrandi sans lissage, couleurs 15 bits avec tramage ;
 - matériau PSX repris du prototype : sommets accrochés à la grille de l'écran, éclairage par
@@ -51,9 +51,17 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
   avec les prochains passages ; pas de 4G sous terre : les messages attendent la surface ;
   batterie qui baisse à chaque photo.
 
-L'état de l'enquête (dossier, messages, déductions, batterie, réseau) est dans l'autoload
+- dialogues à choix avec les personnages du chapitre 1, silhouettes low-poly sans visage détaillé :
+  Sylvain (agent de station, quai direction Pte Dauphine), Jo (endormi dans le couloir),
+  Mme Roche (à son kiosque, boulevard de Courcelles), le gardien (devant la grille du parc) ;
+  E pour leur parler, puis questions, « Montrer une pièce du dossier » à tout moment, « Partir » ;
+  certains mentent tant qu'on ne les contredit pas avec une pièce (Sylvain et sa « pause »), Jo ne
+  parle qu'à la vue de la photo du voyageur, Sylvain avoue une fois la déduction faite ; les
+  témoignages s'ajoutent au dossier.
+
+L'état de l'enquête (dossier, messages, déductions, batterie, réseau, drapeaux) est dans l'autoload
 `Enquete` ; le contenu du chapitre 1 (pièces, messages, déduction finale) dans
-`scripts/chapitre_1.gd`.
+`scripts/chapitre_1.gd`, avec les dialogues (format décrit en tête de `DIALOGUES`).
 
 Habillages dessinés d'après des photos prises comme modèles (aucun pixel copié) : passage sous
 les voies (carreaux blancs, frise brune, voûte blanche, sol gris foncé), escaliers à nez en inox
@@ -71,6 +79,8 @@ service métallique au bout du quai. Liste des stations : plan de ligne RATP (11
 | `scripts/telephone.gd` | le téléphone et ses applis |
 | `scripts/enquete.gd` | état de l'enquête (autoload `Enquete`) |
 | `scripts/chapitre_1.gd` | contenu du chapitre 1 : pièces du dossier, messages, déductions |
+| `scripts/dialogue.gd`, `personnage.gd` | boîte de dialogue ; personnages low-poly |
+| `scripts/ui_theme.gd` | style commun des interfaces |
 | `scripts/panneaux.gd` | panneaux RATP dessinés par le jeu, liste des stations de la ligne 2 |
 | `scripts/trafic.gd` | cycle des passages, montée à bord, écrans des prochains passages, sons |
 | `scripts/psx_geo.gd`, `psx_builder.gd` | primitives à la manière de three.js, fusion par matériau |

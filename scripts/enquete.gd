@@ -18,6 +18,10 @@ var evidence: Array[Dictionary] = []     # {id, kind, title, text, chapter, text
 var photos: Array[Dictionary] = []       # {texture, time, evidence}
 var messages: Array[Dictionary] = []     # {from, text, time, read, evidence}
 var solved: Array[String] = []
+## Ce que le joueur a appris ou provoqué (« sylvain_pause », « jo_parle »…).
+var flags := {}
+## Vrai pendant un dialogue : le téléphone reste rangé.
+var in_dialogue := false
 var _outbox: Array[Dictionary] = []      # messages en attente de réseau
 
 
@@ -101,6 +105,37 @@ func contacts() -> Array[String]:
 		if not names.has(m.from):
 			names.append(m.from)
 	return names
+
+
+# --- Conditions et effets (dialogues) ------------------------------------------
+
+## Condition d'un choix ou d'une réaction : « drapeau », « !drapeau », « has:pièce »,
+## « solved:déduction ». Plusieurs conditions séparées par des espaces doivent toutes être vraies.
+func check(condition: String) -> bool:
+	for c in condition.split(" ", false):
+		var negate := c.begins_with("!")
+		var term := c.substr(1) if negate else c
+		var value: bool
+		if term.begins_with("has:"):
+			value = has_evidence(term.substr(4))
+		elif term.begins_with("solved:"):
+			value = solved.has(term.substr(7))
+		else:
+			value = flags.get(term, false)
+		if value == negate:
+			return false
+	return true
+
+
+## Effets d'un nœud de dialogue : « set » (drapeaux), « evidence » (pièce du dossier).
+func apply(node: Dictionary) -> Array[String]:
+	var added: Array[String] = []
+	for f in node.get("set", []):
+		flags[f] = true
+	var id: String = node.get("evidence", "")
+	if id != "" and add_evidence(id):
+		added.append(Chapitre1.EVIDENCE[id].title)
+	return added
 
 
 # --- Déductions ----------------------------------------------------------------

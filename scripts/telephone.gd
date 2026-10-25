@@ -5,9 +5,9 @@ extends CanvasLayer
 
 const PHONE := Rect2(194, 6, 120, 228)
 const SCREEN_W := 104.0
-const TEXT := Color("#e8e6df")
-const DIM := Color("#8a8f99")
-const ACCENT := Color("#ffbf00")
+const TEXT := UiTheme.TEXT
+const DIM := UiTheme.DIM
+const ACCENT := UiTheme.ACCENT
 const KIND_LABEL := {"photo": "Photo", "indice": "Indice", "temoignage": "Témoin"}
 
 var is_open := false
@@ -48,6 +48,8 @@ func _late_init() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if Enquete.in_dialogue:
+		return
 	if camera_mode:
 		if event.is_action_pressed("interact"):
 			_take_photo()
@@ -71,7 +73,7 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	_time.text = Enquete.clock_text()
 	_network.text = "4G" if Enquete.has_network() else "Pas de réseau"
-	_network.add_theme_color_override("font_color", TEXT if Enquete.has_network() else Color("#e0645a"))
+	_network.add_theme_color_override("font_color", TEXT if Enquete.has_network() else UiTheme.ALERT)
 	_battery.text = "%d %%" % roundi(Enquete.battery)
 	if _toast_left > 0.0:
 		_toast_left -= delta
@@ -172,7 +174,7 @@ func _evidence_detail(item: Dictionary) -> void:
 func _messages() -> void:
 	_begin("Messages")
 	if not Enquete.has_network():
-		_text("Pas de réseau. Les messages arriveront à la surface.", Color("#e0645a"))
+		_text("Pas de réseau. Les messages arriveront à la surface.", UiTheme.ALERT)
 	for name in Enquete.contacts():
 		var unread := Enquete.unread_count(name)
 		_button(name + (" (%d)" % unread if unread > 0 else ""), _show.bind(_thread.bind(name)))
@@ -328,13 +330,13 @@ func _build_phone() -> void:
 	_phone = Panel.new()
 	_phone.position = PHONE.position
 	_phone.size = PHONE.size
-	_phone.theme = _make_theme()
-	_phone.add_theme_stylebox_override("panel", _box(Color("#0b0c0f"), Color("#3a3f48"), 2, 7))
+	_phone.theme = UiTheme.make()
+	_phone.add_theme_stylebox_override("panel", UiTheme.box(Color("#0b0c0f"), Color("#3a3f48"), 2, 7))
 	add_child(_phone)
 	var screen := Panel.new()
 	screen.position = Vector2(6, 10)
 	screen.size = Vector2(PHONE.size.x - 12, PHONE.size.y - 22)
-	screen.add_theme_stylebox_override("panel", _box(Color("#12151b")))
+	screen.add_theme_stylebox_override("panel", UiTheme.box(Color("#12151b")))
 	_phone.add_child(screen)
 	var col := VBoxContainer.new()
 	col.position = Vector2(2, 1)
@@ -388,7 +390,7 @@ func _build_viewfinder() -> void:
 	var reticle := Panel.new()
 	reticle.position = Vector2(152, 112)
 	reticle.size = Vector2(16, 16)
-	reticle.add_theme_stylebox_override("panel", _box(Color.TRANSPARENT, Color(1, 1, 1, 0.8), 1))
+	reticle.add_theme_stylebox_override("panel", UiTheme.box(Color.TRANSPARENT, Color(1, 1, 1, 0.8), 1))
 	_viewfinder.add_child(reticle)
 	var help := _label("E : photographier · Échap : retour", Color(1, 1, 1, 0.85))
 	help.position = Vector2(30, 222)
@@ -397,7 +399,7 @@ func _build_viewfinder() -> void:
 	_viewfinder_info.position = Vector2(236, 6)
 	_viewfinder.add_child(_viewfinder_info)
 	var rec := ColorRect.new()
-	rec.color = Color("#e0645a")
+	rec.color = UiTheme.ALERT
 	rec.size = Vector2(4, 4)
 	rec.position = Vector2(229, 9)
 	_viewfinder.add_child(rec)
@@ -413,7 +415,7 @@ func _build_toast() -> void:
 	_toast = _label("", TEXT)
 	_toast.position = Vector2(6, 6)
 	_toast.add_theme_color_override("font_shadow_color", Color.BLACK)
-	_toast.add_theme_stylebox_override("normal", _box(Color(0, 0, 0, 0.7), Color.TRANSPARENT, 0, 0, 2))
+	_toast.add_theme_stylebox_override("normal", UiTheme.box(Color(0, 0, 0, 0.7), Color.TRANSPARENT, 0, 0, 2))
 	add_child(_toast)
 	_toast.hide()
 
@@ -493,30 +495,3 @@ func _separator() -> ColorRect:
 	r.color = Color("#2a2f38")
 	r.custom_minimum_size = Vector2(0, 1)
 	return r
-
-
-func _make_theme() -> Theme:
-	var t := Theme.new()
-	t.default_font_size = 8
-	t.set_stylebox("normal", "Button", _box(Color("#1c2027"), Color.TRANSPARENT, 0, 2, 2))
-	t.set_stylebox("hover", "Button", _box(Color("#262c36"), Color.TRANSPARENT, 0, 2, 2))
-	t.set_stylebox("pressed", "Button", _box(Color("#2b3442"), Color.TRANSPARENT, 0, 2, 2))
-	t.set_stylebox("focus", "Button", _box(Color.TRANSPARENT, ACCENT, 1, 2, 2))
-	t.set_stylebox("normal", "Label", StyleBoxEmpty.new())
-	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
-		t.set_color(c, "Button", TEXT)
-	t.set_color("font_color", "Label", TEXT)
-	t.set_stylebox("scroll", "VScrollBar", _box(Color("#1c2027")))
-	t.set_stylebox("grabber", "VScrollBar", _box(Color("#4a505c")))
-	t.set_stylebox("grabber_highlight", "VScrollBar", _box(ACCENT))
-	return t
-
-
-func _box(bg: Color, border := Color.TRANSPARENT, width := 0, radius := 0, margin := 0) -> StyleBoxFlat:
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = border
-	s.set_border_width_all(width)
-	s.set_corner_radius_all(radius)
-	s.set_content_margin_all(margin)
-	return s
