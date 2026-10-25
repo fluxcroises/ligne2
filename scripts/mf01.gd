@@ -1,10 +1,12 @@
 class_name MF01
 extends Node3D
-## Rame MF01 de quatre voitures, reprise du prototype : caisse, vitres et portes ajourées,
+## Rame MF01 de cinq voitures (75 m, comme sur la ligne 2), reprise du prototype : caisse, vitres et portes ajourées,
 ## intérieur complet (sièges, barres, néons, soufflets), collisions pour monter à bord.
 ## Origine : centre de la rame, au niveau des rails ; la rame suit l'axe X.
 
-const HALF_LENGTH := 28.0
+const CARS := 5
+const CAR_PITCH := 14.0
+const HALF_LENGTH := CARS * CAR_PITCH / 2
 const DOOR_OFFSETS := [-4.533, 0.0, 4.533]   # portes de chaque voiture, autour de son centre
 const OPEN_THRESHOLD := 0.8                  # au-delà, les portes laissent passer
 
@@ -46,11 +48,15 @@ func set_doors(amount: float) -> void:
 			shape.set_deferred("disabled", open)
 
 
+static func car_center(c: int) -> float:
+	return (c - (CARS - 1) / 2.0) * CAR_PITCH
+
+
 static func door_positions() -> Array[float]:
 	var xs: Array[float] = []
-	for c in 4:
+	for c in CARS:
 		for dx in DOOR_OFFSETS:
-			xs.append(-21.0 + c * 14.0 + dx)
+			xs.append(car_center(c) + dx)
 	return xs
 
 
@@ -58,8 +64,8 @@ func _build_body(M: Dictionary) -> void:
 	var b := PsxBuilder.new()
 	var fh := floor_height
 	var poles := []
-	for c in 4:
-		var cx := -21.0 + c * 14.0
+	for c in CARS:
+		var cx := car_center(c)
 		_put(b, PsxGeo.box(13.0, 0.6, 2.0, 7, 1, 1), M.rameNoir, Vector3(cx, 0.35, 0))
 		_put(b, PsxGeo.uv_scale(PsxGeo.plane(13.6, 2.4, 7, 1), 3, 1), M.rameBlanc, Vector3(cx, 3.5, 0), Vector3(-PI / 2, 0, 0))
 		_put(b, PsxGeo.plane(13.6, 2.3, 7, 1), M.int_sol, Vector3(cx, fh, 0), Vector3(-PI / 2, 0, 0))
@@ -104,7 +110,7 @@ func _build_body(M: Dictionary) -> void:
 			_put(b, PsxGeo.cylinder(0.02, 0.02, 13.2, 4), M.inox, Vector3(cx, fh + 1.95, z), Vector3(0, 0, PI / 2))
 		for z in [-0.6, 0.6]:
 			_put(b, PsxGeo.box(12.6, 0.05, 0.22), M.neon, Vector3(cx, fh + 2.17, z))
-		if c < 3:  # soufflet d'intercirculation
+		if c < CARS - 1:  # soufflet d'intercirculation
 			for sz in [-1, 1]:
 				_put(b, PsxGeo.plane(0.42, 2.2), M.soufflet, Vector3(cx + 7, fh + 1.1, sz * 1.0), Vector3(0, 0.0 if sz < 0 else PI, 0))
 				_put(b, PsxGeo.plane(0.42, 2.9), M.rameNoir, Vector3(cx + 7, 2.05, sz * 1.2), Vector3(0, PI if sz < 0 else 0.0, 0))
@@ -113,10 +119,10 @@ func _build_body(M: Dictionary) -> void:
 			_put(b, PsxGeo.plane(0.42, 2.4), M.rameNoir, Vector3(cx + 7, 3.45, 0), Vector3(-PI / 2, 0, 0))
 	for p in poles:
 		_put(b, PsxGeo.cylinder(0.025, 0.025, 2.1, 5), M.inox, p)
-	_put(b, PsxGeo.plane(2.4, 3.0), M.rameFace, Vector3(-28.02, 2.05, 0), Vector3(0, -PI / 2, 0))
-	_put(b, PsxGeo.plane(2.4, 3.0), M.rameFace, Vector3(28.02, 2.05, 0), Vector3(0, PI / 2, 0))
-	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(-27.6, fh + 1.1, 0), Vector3(0, PI / 2, 0))
-	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(27.6, fh + 1.1, 0), Vector3(0, -PI / 2, 0))
+	_put(b, PsxGeo.plane(2.4, 3.0), M.rameFace, Vector3(-HALF_LENGTH - 0.02, 2.05, 0), Vector3(0, -PI / 2, 0))
+	_put(b, PsxGeo.plane(2.4, 3.0), M.rameFace, Vector3(HALF_LENGTH + 0.02, 2.05, 0), Vector3(0, PI / 2, 0))
+	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(-HALF_LENGTH + 0.4, fh + 1.1, 0), Vector3(0, PI / 2, 0))
+	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(HALF_LENGTH - 0.4, fh + 1.1, 0), Vector3(0, -PI / 2, 0))
 	b.build(self)
 
 
@@ -141,8 +147,8 @@ func _build_collisions() -> void:
 		start = d + 0.5
 	_shape(body, Vector3(HALF_LENGTH - start, 2.4, 0.1), Vector3((start + HALF_LENGTH) / 2, fh + 1.2, door_side * 1.22))
 	# carrés de sièges, en laissant l'allée centrale libre
-	for c in 4:
-		for bx in [-21.0 + c * 14.0 - 2.266, -21.0 + c * 14.0 + 2.266]:
+	for c in CARS:
+		for bx in [car_center(c) - 2.266, car_center(c) + 2.266]:
 			for sz in [-1, 1]:
 				_shape(body, Vector3(1.9, 0.9, 0.8), Vector3(bx, fh + 0.45, sz * 0.7))
 

@@ -15,9 +15,10 @@ const ROT := Vector3(-14, 0, 5)           # centre de la Rotonde
 
 # Station
 const PY := -6.48         # niveau du quai
-const X0 := -30.0
-const X1 := 30.0
-const L := 60.0           # longueur du quai
+const HALF := 37.5        # demi-longueur des quais (75 m, comme à Monceau)
+const X0 := -HALF
+const X1 := HALF
+const L := HALF * 2       # longueur du quai
 const ZA := 20.0          # mur du quai direction Porte Dauphine
 const ZB := 34.0          # mur du quai direction Nation
 const ZT0 := 24.0         # bord du quai A
@@ -43,8 +44,12 @@ var M := {}
 var night := true
 var underground := false
 var _builder := PsxBuilder.new()
+## Miroir appliqué pendant la construction de la salle des billets (voir GUICHET_SIDE).
+var _mirror := Transform3D.IDENTITY
+var _solid_side := 1.0
 var _lanterns: Array[Vector3] = []
-var _under_lamps: Array[Vector3] = [Vector3(0, -1.1, 5.5), Vector3(0, -1.1, 9.5), Vector3(0, -1.1, 13.2), Vector3(0, -3.0, 17.2),
+# (la salle des billets est éclairée par sa zone de néons, pas par ces lampes)
+var _under_lamps: Array[Vector3] = [Vector3(0, -1.2, -0.5), Vector3(-1.5, 3.2, 21.4), Vector3(0, -1.1, 13.2), Vector3(0, -3.0, 17.2),
 	Vector3(0, -1.6, 2.0)]   # bas du premier escalier
 ## Personnages du chapitre, par identifiant de dialogue.
 var people := {}
@@ -82,10 +87,12 @@ func _ready() -> void:
 	add_child(chapter)
 	_builder.build(self)
 	RenderingServer.global_shader_parameter_set("zone_color", Vector3(0.98, 0.97, 0.92))
-	RenderingServer.global_shader_parameter_set("zone_min", Vector3(-31.0, -1000.0, 19.6))
-	RenderingServer.global_shader_parameter_set("zone_max", Vector3(31.0, -0.3, 34.6))
-	RenderingServer.global_shader_parameter_set("zone2_min", Vector3(HX + 0.05, CY - 0.1, HALL_Z0 - 0.05))
-	RenderingServer.global_shader_parameter_set("zone2_max", Vector3(LOGE_X + 0.1, CC + 0.1, HALL_Z1 + 0.05))
+	RenderingServer.global_shader_parameter_set("zone_min", Vector3(-HALF - 1.0, -1000.0, 19.6))
+	RenderingServer.global_shader_parameter_set("zone_max", Vector3(HALF + 1.0, -0.3, 34.6))
+	RenderingServer.global_shader_parameter_set("zone2_color", Vector3(1.35, 1.36, 1.38))   # salle très claire
+	var hall_x := [-HALL_W * GUICHET_SIDE, LOGE_X * GUICHET_SIDE]
+	RenderingServer.global_shader_parameter_set("zone2_min", Vector3(minf(hall_x[0], hall_x[1]) - 0.1, CY - 0.1, HALL_Z0 - 0.05))
+	RenderingServer.global_shader_parameter_set("zone2_max", Vector3(maxf(hall_x[0], hall_x[1]) + 0.1, HALL_TOP + 0.1, HALL_Z1 + 0.05))
 	set_night(night)
 
 
@@ -217,9 +224,11 @@ func _make_materials() -> void:
 		"neon": _mat("blanc", 0xffffff, false, true), "noir": _mat("blanc", 0x040404, false, true),
 		"nom": _mat("nom_quai"), "nepas": _mat("nepas"), "direction": _mat("direction"),
 		"sortieQ": _mat("sortie_quai"), "alarme": _mat("alarme"), "repere": _mat("repere"), "descente": _mat("descente"),
-		"seat": _mat("blanc", 0xec7a1c), "inox": _mat("blanc", 0xb4b8bc), "tunnel": _mat("pierre", 0x5e5c58),
+		"seat": _mat("blanc", 0x2f7a46), "inox": _mat("blanc", 0xb4b8bc), "tunnel": _mat("pierre", 0x5e5c58),
 		"service": _mat("porte_service"), "marche": _mat("sol_quai", 0xb0b0b0),
-		"platre": _mat("blanc", 0xbdbab1), "frise": _mat("frise"),
+		"platre": _mat("blanc", 0xbdbab1), "frise": _mat("frise_verte"),
+		"carreau_salle": _mat("carreau", 0xe2ecf2),   # blanc plus froid, comme sur la photo de la salle
+		"frise_verte": _mat("frise_verte"), "plinthe_verte": _mat("plinthe_verte"),
 		# rames MF01
 		"rameCote": _mat("rame_cote", 0xffffff, true), "rameFace": _mat("rame_face"),
 		"rameBlanc": _mat("blanc", 0xe6e4dc), "rameNoir": _mat("blanc", 0x1a1a1c),
@@ -241,11 +250,26 @@ static func seg(v: float, cap := 48) -> int:
 
 
 func add(geo: Dictionary, m: Material, pos: Vector3, rot := Vector3.ZERO, scale := Vector3.ONE) -> void:
-	_builder.add(geo, m, PsxGeo.xf(pos, rot, scale))
+	_builder.add(geo, m, _mirror * PsxGeo.xf(pos, rot, scale))
 
 
 func add_xf(geo: Dictionary, m: Material, xform: Transform3D) -> void:
-	_builder.add(geo, m, xform)
+	_builder.add(geo, m, _mirror * xform)
+
+
+## La salle des billets est décrite côté guichet en +x, puis retournée en miroir (comme à
+## Monceau : en allant vers les quais, le guichet et les portillons sont à droite).
+func _set_hall_mirror(on: bool) -> void:
+	_mirror = Transform3D(Basis.from_scale(Vector3(GUICHET_SIDE, 1, 1)), Vector3.ZERO) if on else Transform3D.IDENTITY
+	_solid_side = GUICHET_SIDE if on else 1.0
+
+
+## Panneau à texte dans la salle : placé au bon endroit sans être retourné.
+func _hall_sign(m: Material, w: float, h: float, x: float, y: float, z: float, ry: float) -> void:
+	var saved := _mirror
+	_mirror = Transform3D.IDENTITY
+	plane(m, w, h, x * GUICHET_SIDE, y, z, ry * GUICHET_SIDE)
+	_mirror = saved
 
 
 ## Rectangle horizontal ; rx = PI/2 pour un plafond.
@@ -308,14 +332,14 @@ func _build_entrance() -> void:
 		var top := -(i + 1) * 0.27
 		box(M.pierreS, 2 * HX, 3.8 + top, 0.5, 0, (top - 3.8) / 2, Z0 + i * 0.5 + 0.25, 2, 1)
 	# murs carrelés de la trémie et du couloir
-	plane(M.carrelage, 17, 3.6, -HX, -1.8, 5.5, PI / 2, 22, 5)
-	# côté est, le mur s'ouvre sur la salle des billets (z 5 à 11)
-	plane(M.carrelage, HALL_Z0 + 3, 3.6, HX, -1.8, (HALL_Z0 - 3) / 2, PI / 2, (HALL_Z0 + 3) * 1.3, 5)
-	plane(M.carrelage, 14 - HALL_Z1, 3.6, HX, -1.8, (HALL_Z1 + 14) / 2, PI / 2, (14 - HALL_Z1) * 1.3, 5)
+	# murs de l'escalier, puis du couloir après la salle des billets (z 3 à 11,2)
+	for sx in [-1, 1]:
+		plane(M.carrelage, Z1 - Z0, 3.6, sx * HX, -1.8, (Z0 + Z1) / 2, PI / 2, (Z1 - Z0) * 1.3, 5)
+		plane(M.carrelage, 14 - HALL_Z1, 3.6, sx * HX, -1.8, (HALL_Z1 + 14) / 2, PI / 2, (14 - HALL_Z1) * 1.3, 5)
 	plane(M.carrelage, 2 * HX, 0.95, 0, -0.47, Z1, 0, 3, 1.2)
 	plane(M.globes, 2.1, 0.5, 0, -0.62, Z1 - 0.02, 0)
-	rect(M.carrelage, -HX, Z1, HX, 14, -0.92, 0.8, PI / 2)
-	rect(M.pierreS, -HX, Z1, HX, 14, -3.24, 1.2)
+	rect(M.carrelage, -HX, HALL_Z1, HX, 14, -0.92, 0.8, PI / 2)
+	rect(M.pierreS, -HX, HALL_Z1, HX, 14, -3.24, 1.2)
 	# second escalier, vers le quai
 	for i in 12:
 		var top := -3.24 - (i + 1) * 0.27
@@ -348,8 +372,8 @@ func _build_station() -> void:
 			box(M.rail, L + 220, 0.14, 0.08, 0, RY + 0.07, c + o)
 
 	# piédroits (avec l'ouverture de l'escalier) et plinthe brune
-	var wl := 30 - HX
-	var wc := (30 + HX) / 2
+	var wl := HALF - HX
+	var wc := (HALF + HX) / 2
 	for sx in [-1, 1]:
 		plane(M.carreau, wl, WT - PY, sx * wc, (PY + WT) / 2, ZA, 0, wl / TW, (WT - PY) / TH)
 	plane(M.carreau, L, WT - PY, 0, (PY + WT) / 2, ZB, 0, L / TW, (WT - PY) / TH)
@@ -386,10 +410,10 @@ func _build_station() -> void:
 	box(M.inox, 0.03, 0.9, 0.03, 0, -2.8, 22.2)
 	box(M.inox, 0.05, 0.05, 0.75, -9, -3.7, 20.35)
 	box(M.inox, 0.05, 0.05, 0.75, 12, -3.7, 20.35)
-	plane(M.repere, 0.45, 0.45, -28.6, -3.4, 25.5, PI / 2)
-	box(M.inox, 0.03, 1.2, 0.03, -28.6, -2.6, 25.5)
-	plane(M.repere, 0.45, 0.45, 28.6, -3.4, 28.5, -PI / 2)
-	box(M.inox, 0.03, 1.2, 0.03, 28.6, -2.6, 28.5)
+	plane(M.repere, 0.45, 0.45, -HALF + 1.4, -3.4, 25.5, PI / 2)
+	box(M.inox, 0.03, 1.2, 0.03, -HALF + 1.4, -2.6, 25.5)
+	plane(M.repere, 0.45, 0.45, HALF - 1.4, -3.4, 28.5, -PI / 2)
+	box(M.inox, 0.03, 1.2, 0.03, HALF - 1.4, -2.6, 28.5)
 
 	# écrans des prochains passages, un par quai
 	for screen in [[22.4, 0], [31.6, 1]]:
@@ -422,7 +446,7 @@ func _build_station() -> void:
 
 func _build_vault() -> void:
 	var n_arc := 18
-	var n_len := 30
+	var n_len := 38
 	var g := PsxGeo.empty()
 	var s_acc := 0.0
 	var prev := Vector2.ZERO
@@ -457,7 +481,7 @@ func _build_tympan_and_tunnel(sx: float) -> void:
 		var a := PI * i / 12
 		outline.append(Vector2(CZ + RZ * cos(a), WT + RV * sin(a)))
 	outline.append(Vector2(ZA, WT))
-	add(PsxGeo.polygon(outline, 1 / TW, 1 / TH), M.carreau, Vector3(sx * 30, 0, 0), Vector3(0, -PI / 2, 0))
+	add(PsxGeo.polygon(outline, 1 / TW, 1 / TH), M.carreau, Vector3(sx * HALF, 0, 0), Vector3(0, -PI / 2, 0))
 
 	# galerie : piédroits et voûte
 	var pr := [[ZT0, RY, 0.0, 1.0], [ZT0, -4.6, 0.0, 1.0]]
@@ -473,7 +497,7 @@ func _build_tympan_and_tunnel(sx: float) -> void:
 		if i > 0:
 			acc += Vector2(pr[i][0] - pr[i - 1][0], pr[i][1] - pr[i - 1][1]).length()
 		for j in nx + 1:
-			var x := sx * (30 + TUNNEL_LEN * j / nx)
+			var x := sx * (HALF + TUNNEL_LEN * j / nx)
 			g.p.append(Vector3(x, pr[i][1], pr[i][0]))
 			g.n.append(Vector3(0, pr[i][2], pr[i][3]))
 			g.uv.append(Vector2(x / 2.4, acc / 1.2))
@@ -484,16 +508,16 @@ func _build_tympan_and_tunnel(sx: float) -> void:
 			g.i.append_array([a, b, a + 1, b, b + 1, a + 1])
 	add(g, M.tunnel, Vector3.ZERO)
 
-	rect(M.voie, 30.0 if sx > 0 else -30 - TUNNEL_LEN, ZT0, 30 + TUNNEL_LEN if sx > 0 else -30.0, ZT1, RY, 1.2)
-	var x := 38.0
-	while x < 30 + TUNNEL_LEN:
+	rect(M.voie, HALF if sx > 0 else -HALF - TUNNEL_LEN, ZT0, HALF + TUNNEL_LEN if sx > 0 else -HALF, ZT1, RY, 1.2)
+	var x := HALF + 8.0
+	while x < HALF + TUNNEL_LEN:
 		box(M.neon, 0.12, 0.12, 0.06, sx * x, -4.5, ZT0 + 0.04)
 		box(M.neon, 0.12, 0.12, 0.06, sx * (x + 7), -4.5, ZT1 - 0.04)
 		x += 14
-	plane(M.noir, 6.2, 6, sx * (30 + TUNNEL_LEN - 0.5), -4.6, CZ, PI / 2)
+	plane(M.noir, 6.2, 6, sx * (HALF + TUNNEL_LEN - 0.5), -4.6, CZ, PI / 2)
 	# panneaux « Descente interdite » en bout de quai
-	plane(M.descente, 0.55, 1.65, sx * 29.5, PY + 0.83, ZT0 - 0.35, -sx * PI / 2)
-	plane(M.descente, 0.55, 1.65, sx * 29.5, PY + 0.83, ZT1 + 0.35, -sx * PI / 2)
+	plane(M.descente, 0.55, 1.65, sx * (HALF - 0.5), PY + 0.83, ZT0 - 0.35, -sx * PI / 2)
+	plane(M.descente, 0.55, 1.65, sx * (HALF - 0.5), PY + 0.83, ZT1 + 0.35, -sx * PI / 2)
 
 
 # --- Bouche Guimard : arcs, lanternes, enseigne -------------------------------
@@ -681,7 +705,7 @@ func _build_passage() -> void:
 		var length: float = wall[1]
 		plane(M.carreau, length, wall_h, x, (PFLOOR + PSPRING) / 2, wall[2], PI / 2, length / TW, wall_h / TH)
 		plane(M.frise, length, 0.14, x + (0.01 if x < PX2 else -0.01), PSPRING - 0.07, wall[2], PI / 2, length / 0.6, 1)
-		plane(M.plinthe, length, 0.2, x + (0.01 if x < PX2 else -0.01), PFLOOR + 0.1, wall[2], PI / 2, length / 0.6, 1)
+		plane(M.plinthe_verte, length, 0.2, x + (0.01 if x < PX2 else -0.01), PFLOOR + 0.1, wall[2], PI / 2, length / 0.6, 1)
 	for z in [ZA, ZB]:
 		plane(M.carreau, PX2 - PX1, PCEIL - PFLOOR, (PX1 + PX2) / 2, (PCEIL + PFLOOR) / 2, z, 0, (PX2 - PX1) / TW, (PCEIL - PFLOOR) / TH)
 	_build_passage_vault()
@@ -741,104 +765,135 @@ func _sign_from_texture(tex: Texture2D) -> ShaderMaterial:
 	return m
 
 
-# --- Salle des billets : guichet, loge de l'agent, automates, portillons -------
-# D'après des photos prises comme modèles : guichet « Services » à bandeau turquoise, vitre,
-# bas gris foncé, porte de la loge ; automates « Tickets » ; portillons inox à tripode.
-# La salle s'ouvre sur le côté est du couloir, entre les deux escaliers ; la loge est derrière.
+# --- Salle des billets ---------------------------------------------------------
+# D'après la photo de la salle des billets de Monceau (Chabe01, Wikimedia Commons,
+# CC BY-SA 4.0, voir CREDITS.md) : un élargissement du couloir au bas de l'escalier de la rue,
+# voûtains blancs entre des poutres rivetées, carrelage blanc à frise et plinthe vertes.
+# À gauche, une porte de service inox sous un bandeau ⓘ, le plan du quartier, un défibrillateur ;
+# à droite, le guichet « Services », la porte de la loge, l'automate « Tickets » ; au fond, les
+# portes de sortie et les portillons. La loge de l'agent est derrière le guichet.
 
 const CY := -3.24              # sol du couloir
 const CC := -0.92              # plafond du couloir
-const HALL_X := 6.0            # mur du guichet
-const HALL_Z0 := 5.0
-const HALL_Z1 := 11.0
-const LOGE_X := 8.6            # fond de la loge
-const LOGE_Z1 := 9.2           # mur nord de la loge
-const WINDOW := Vector4(5.9, 8.1, -2.19, -1.24)   # vitre : z0, z1, y0, y1
-const DOOR := Vector2(8.3, 9.1)                    # porte de la loge : z0, z1
-const SYLVAIN_GUICHET := Vector3(7.0, CY, 7.0)
+const HALL_W := 2.8            # demi-largeur de la salle
+const GUICHET_SIDE := -1.0     # le guichet est en -x : à droite en allant vers les quais
+const LOGE_DOOR_OPEN := -100.0 * GUICHET_SIDE   # angle de la porte entrouverte, en degrés
+const HALL_Z0 := Z1            # bas de l'escalier de la rue
+const HALL_Z1 := 11.2          # la salle se resserre en couloir
+const HALL_TOP := -0.55        # clé des voûtains
+const VAULT_SPRING := -1.05
+const GATES_Z := 9.9           # ligne des portillons
+const LOGE_X := 5.4            # fond de la loge
+const LOGE_Z0 := 3.6
+const LOGE_Z1 := 7.9
+const WINDOW := Vector4(4.0, 6.3, -2.19, -1.24)   # vitre du guichet : z0, z1, y0, y1
+const DOOR := Vector2(6.9, 7.7)                    # porte de la loge : z0, z1
+const SYLVAIN_GUICHET := Vector3(3.55 * GUICHET_SIDE, CY, 5.15)
+const SYLVAIN_GUICHET_YAW := PI / 2 * GUICHET_SIDE
 const SYLVAIN_QUAI := Vector3(-6.0, PY, 21.2)
-const GATES_Z := 12.0          # ligne des portillons
 
 
 func _build_ticket_hall() -> void:
+	_set_hall_mirror(true)
 	var white := _mat("blanc", 0xe6e5e0)
-	var grey := _mat("blanc", 0x4b4d52)
-	var teal := _sign_from_texture(Panneaux.band(self, "i", "Services"))
+	var dark := _mat("blanc", 0x2e2f31)
+	var steel := _mat("blanc", 0x8a8d90)
+	var vault := _mat("blanc", 0xb4b2ab)
+	var beam := _mat("poutre")
+	var services := _sign_from_texture(Panneaux.band(self, "i", "Services"))
 	var tickets := _sign_from_texture(Panneaux.band(self, "T", "Tickets"))
-	teal.set_shader_parameter("emission", Vector3(0.8, 0.8, 0.8))
-	tickets.set_shader_parameter("emission", Vector3(0.8, 0.8, 0.8))
-	var h := CC - CY
-	# sol, plafond, murs latéraux de la salle
-	rect(M.pierreS, HX, HALL_Z0, HALL_X, HALL_Z1, CY, 1.2)
-	rect(M.carrelage, HX, HALL_Z0, HALL_X, HALL_Z1, CC, 0.8, PI / 2)
-	for z in [HALL_Z0, HALL_Z1]:
-		plane(M.carreau, HALL_X - HX, h, (HX + HALL_X) / 2, (CY + CC) / 2, z, 0, (HALL_X - HX) / TW, h / TH)
-	# mur du guichet, percé de la vitre et de la porte de la loge
-	var x := HALL_X + 0.06
-	_wall_box(white, x, HALL_Z0, WINDOW.x, CY, CC)
-	_wall_box(white, x, WINDOW.x, WINDOW.y, WINDOW.w, CC)
-	_wall_box(grey, x, WINDOW.x, WINDOW.y, CY, WINDOW.z)
-	_wall_box(white, x, WINDOW.y, DOOR.x, CY, CC)
-	_wall_box(white, x, DOOR.x, DOOR.y, -1.2, CC)
-	_wall_box(white, x, DOOR.y, HALL_Z1, CY, CC)
-	box(grey, 0.04, 1.0, HALL_Z1 - DOOR.y, HALL_X - 0.01, CY + 0.5, (DOOR.y + HALL_Z1) / 2)
-	box(grey, 0.04, 1.0, WINDOW.x - HALL_Z0, HALL_X - 0.01, CY + 0.5, (HALL_Z0 + WINDOW.x) / 2)
-	box(white, 0.3, 0.05, WINDOW.y - WINDOW.x, HALL_X - 0.12, WINDOW.z, (WINDOW.x + WINDOW.y) / 2)   # tablette
-	box(M.inox, 0.03, 0.03, WINDOW.y - WINDOW.x, HALL_X, WINDOW.w - 0.02, (WINDOW.x + WINDOW.y) / 2)
-	# bandeau « Services » au-dessus de la vitre et de la porte, « Tickets » au-dessus des automates
-	plane(teal, DOOR.y - HALL_Z0 - 0.4, 0.34, HALL_X - 0.04, -1.08, (HALL_Z0 + 0.4 + DOOR.y) / 2, -PI / 2)
-	plane(tickets, HALL_Z1 - DOOR.y - 0.2, 0.3, HALL_X - 0.04, -1.08, (DOOR.y + HALL_Z1) / 2, -PI / 2)
-	# petits carreaux de couleur sur le blanc, comme sur la photo
-	var accents := [0xd8452f, 0x3a6fd8, 0x8a3ad8, 0x18b0a8, 0xe8a03a]
-	for i in 7:
-		box(_mat("blanc", accents[i % accents.size()]), 0.02, 0.07, 0.3, HX + 0.03, -2.0 + (i % 3) * 0.35, 3.4 + i * 0.25)
-	box(M.neon, 2.4, 0.05, 0.2, 3.6, CC - 0.03, 8.0)                       # néon de la salle
-	box(M.neon, 1.2, 0.05, 0.15, 7.3, CC - 0.03, 7.2)                       # néon de la loge
-	# automates : un « Tickets » blanc et gris, une borne violette
-	box(_mat("blanc", 0xd8d8d4), 0.45, 1.7, 0.7, HALL_X - 0.24, CY + 0.85, 9.7)
-	box(M.noir, 0.02, 0.3, 0.4, HALL_X - 0.47, CY + 1.25, 9.7)
-	box(grey, 0.02, 0.5, 0.5, HALL_X - 0.47, CY + 0.55, 9.7)
-	box(_mat("blanc", 0x7a3aa8), 0.4, 1.4, 0.5, HALL_X - 0.21, CY + 0.7, 10.5)
-	box(M.noir, 0.02, 0.22, 0.3, HALL_X - 0.42, CY + 1.05, 10.5)
+	var info := _sign_from_texture(Panneaux.band(self, "i", ""))
+	for m in [services, tickets, info]:
+		m.set_shader_parameter("emission", Vector3(0.8, 0.8, 0.8))
+	var mid := (HALL_Z0 + HALL_Z1) / 2
 
-	# la loge : sol, plafond, murs, bureau, cahier, casier
-	rect(M.sol, HALL_X, HALL_Z0, LOGE_X, LOGE_Z1, CY, 2.4)
-	rect(white, HALL_X, HALL_Z0, LOGE_X, LOGE_Z1, CC, 2.0, PI / 2)
-	plane(white, LOGE_Z1 - HALL_Z0, h, LOGE_X, (CY + CC) / 2, (HALL_Z0 + LOGE_Z1) / 2, -PI / 2)
-	plane(white, LOGE_X - HALL_X, h, (HALL_X + LOGE_X) / 2, (CY + CC) / 2, LOGE_Z1, PI)
-	plane(white, LOGE_X - HALL_X, h, (HALL_X + LOGE_X) / 2, (CY + CC) / 2, HALL_Z0, 0)
-	box(grey, 0.55, 0.05, 2.0, HALL_X + 0.4, CY + 0.75, 7.0)            # comptoir derrière la vitre
-	box(grey, 0.5, 0.05, 1.4, LOGE_X - 0.3, CY + 0.85, 6.3)            # bureau du fond
-	box(grey, 0.05, 0.85, 1.4, LOGE_X - 0.3, CY + 0.42, 6.3)
-	box(M.noir, 0.3, 0.25, 0.04, LOGE_X - 0.25, CY + 1.05, 6.0)        # écran de surveillance
-	box(_mat("blanc", 0x5a6a7a), 0.45, 1.8, 0.5, LOGE_X - 0.25, CY + 0.9, 8.75)   # casier
-	box(M.inox, 0.02, 0.04, 0.1, LOGE_X - 0.48, CY + 1.0, 8.6)
+	# sol, murs carrelés, voûtains entre poutres rivetées
+	rect(_mat("trottoir", 0xa8a8a6), -HALL_W, HALL_Z0, HALL_W, HALL_Z1, CY, 2.0)
+	_tiled_wall(-HALL_W, HALL_Z0, HALL_Z1, 1.0)
+	_tiled_wall(HALL_W, HALL_Z0, LOGE_Z0, -1.0)
+	_tiled_wall(HALL_W, LOGE_Z1, HALL_Z1, -1.0)
+	for z_wall in [[HALL_Z0, 0.0], [HALL_Z1, PI]]:
+		for sx in [-1, 1]:
+			var w := HALL_W - HX
+			plane(M.carreau_salle, w, HALL_TOP - CY, sx * (HX + w / 2), (CY + HALL_TOP) / 2, z_wall[0], z_wall[1], w / TW, (HALL_TOP - CY) / TH)
+		if z_wall[0] == HALL_Z1:   # au-dessus de l'entrée du couloir
+			plane(M.carreau, 2 * HX, HALL_TOP - CC, 0, (CC + HALL_TOP) / 2, z_wall[0], z_wall[1], 2 * HX / TW, 1)
+	var beams := [HALL_Z0 + 0.1, HALL_Z0 + 2.75, HALL_Z0 + 5.4, HALL_Z1 - 0.1]
+	for z in beams:
+		box(beam, 2 * HALL_W, 0.24, 0.22, 0, VAULT_SPRING - 0.08, z, 2 * HALL_W / 1.2, 1)
+	box(beam, 0.22, 0.2, HALL_Z1 - HALL_Z0, 0, VAULT_SPRING - 0.06, mid, 1, (HALL_Z1 - HALL_Z0) / 1.2)
+	for i in beams.size() - 1:
+		_vaulted_bay(vault, beams[i], beams[i + 1])
+		box(M.neon, 0.25, 0.06, 0.25, -1.4, VAULT_SPRING - 0.22, (beams[i] + beams[i + 1]) / 2)
+		box(M.neon, 0.25, 0.06, 0.25, 1.4, VAULT_SPRING - 0.22, (beams[i] + beams[i + 1]) / 2)
+
+	# mur de gauche : porte de service inox, plan du quartier, défibrillateur
+	var x := -HALL_W
+	box(steel, 0.05, 2.1, 0.9, x + 0.03, CY + 1.05, 4.2)
+	_hall_sign(info, 1.0, 0.24, x + 0.07, CY + 2.3, 4.2, PI / 2)
+	box(M.inox, 0.08, 1.45, 1.05, x + 0.05, CY + 1.3, 6.1)
+	_hall_sign(M.plan, 0.9, 1.3, x + 0.1, CY + 1.3, 6.1, PI / 2)
+	box(white, 0.14, 0.4, 0.32, x + 0.08, CY + 1.25, 3.35)
+	box(_mat("blanc", 0x2fa05a), 0.02, 0.18, 0.32, x + 0.03, CY + 1.62, 3.35)
+
+	# mur de droite : guichet « Services », porte de la loge, automate « Tickets »
+	x = HALL_W + 0.06
+	_wall_box(white, x, LOGE_Z0, WINDOW.x, CY, HALL_TOP)
+	_wall_box(white, x, WINDOW.x, WINDOW.y, WINDOW.w, HALL_TOP)
+	_wall_box(dark, x, WINDOW.x, WINDOW.y, CY, WINDOW.z)
+	_wall_box(white, x, WINDOW.y, DOOR.x, CY, HALL_TOP)
+	_wall_box(white, x, DOOR.x, DOOR.y, -1.2, HALL_TOP)
+	_wall_box(white, x, DOOR.y, LOGE_Z1, CY, HALL_TOP)
+	box(dark, 0.04, 1.0, WINDOW.x - LOGE_Z0, HALL_W - 0.01, CY + 0.5, (LOGE_Z0 + WINDOW.x) / 2)
+	box(dark, 0.04, 1.0, DOOR.x - WINDOW.y, HALL_W - 0.01, CY + 0.5, (WINDOW.y + DOOR.x) / 2)
+	box(white, 0.3, 0.05, WINDOW.y - WINDOW.x, HALL_W - 0.12, WINDOW.z, (WINDOW.x + WINDOW.y) / 2)   # tablette
+	box(M.inox, 0.03, 0.03, WINDOW.y - WINDOW.x, HALL_W, WINDOW.w - 0.02, (WINDOW.x + WINDOW.y) / 2)
+	_hall_sign(services, DOOR.x - LOGE_Z0 - 0.2, 0.3, HALL_W - 0.04, -1.05, (LOGE_Z0 + DOOR.x) / 2, -PI / 2)
+	box(_mat("blanc", 0xd8d8d4), 0.45, 1.7, 0.7, HALL_W - 0.24, CY + 0.85, 8.6)   # automate « Tickets »
+	box(M.noir, 0.02, 0.3, 0.4, HALL_W - 0.47, CY + 1.25, 8.6)
+	box(_mat("blanc", 0x7a3aa8), 0.02, 0.35, 0.3, HALL_W - 0.47, CY + 0.6, 8.6)
+	_hall_sign(tickets, 1.1, 0.3, HALL_W - 0.04, -1.05, 8.6, -PI / 2)
+
+	# la loge : sol, plafond, murs, comptoir, bureau, cahier, casier
+	var h := CC - CY
+	rect(M.sol, HALL_W, LOGE_Z0, LOGE_X, LOGE_Z1, CY, 2.4)
+	rect(white, HALL_W, LOGE_Z0, LOGE_X, LOGE_Z1, CC, 2.0, PI / 2)
+	plane(white, LOGE_Z1 - LOGE_Z0, h, LOGE_X, (CY + CC) / 2, (LOGE_Z0 + LOGE_Z1) / 2, -PI / 2)
+	plane(white, LOGE_X - HALL_W, h, (HALL_W + LOGE_X) / 2, (CY + CC) / 2, LOGE_Z1, PI)
+	plane(white, LOGE_X - HALL_W, h, (HALL_W + LOGE_X) / 2, (CY + CC) / 2, LOGE_Z0, 0)
+	box(M.neon, 1.0, 0.05, 0.15, (HALL_W + LOGE_X) / 2, CC - 0.03, 5.6)
+	box(dark, 0.55, 0.05, 2.0, HALL_W + 0.4, CY + 0.75, 5.15)            # comptoir derrière la vitre
+	box(dark, 0.5, 0.05, 1.4, LOGE_X - 0.3, CY + 0.85, 4.5)             # bureau du fond
+	box(dark, 0.05, 0.85, 1.4, LOGE_X - 0.3, CY + 0.42, 4.5)
+	box(M.noir, 0.3, 0.25, 0.04, LOGE_X - 0.25, CY + 1.05, 4.1)         # écran de surveillance
+	box(_mat("blanc", 0x5a6a7a), 0.45, 1.8, 0.5, LOGE_X - 0.25, CY + 0.9, 7.35)   # casier
+	box(M.inox, 0.02, 0.04, 0.1, LOGE_X - 0.48, CY + 1.0, 7.2)
 	var cahier := Examinable.new()
 	cahier.title = "Cahier de service"
 	cahier.description = "Ouvert à la page de mardi. « 23 h 08 : intervention maintenance, voie 1, porte de service. » Rien de tel dans le planning affiché au mur."
 	cahier.evidence_id = "cahier"
 	cahier.photo_range = 1.8
-	cahier.position = Vector3(LOGE_X - 0.3, CY + 0.88, 6.5)
+	cahier.position = Vector3((LOGE_X - 0.3) * GUICHET_SIDE, CY + 0.88, 4.7)
 	_examinable_shape(cahier, Vector3(0.35, 0.1, 0.4))
 	add_child(cahier)
-	box(white, 0.22, 0.015, 0.3, LOGE_X - 0.3, CY + 0.88, 6.5)
-	box(_mat("blanc", 0x2a3a6a), 0.23, 0.01, 0.31, LOGE_X - 0.3, CY + 0.87, 6.5)
+	box(white, 0.22, 0.015, 0.3, LOGE_X - 0.3, CY + 0.88, 4.7)
+	box(_mat("blanc", 0x2a3a6a), 0.23, 0.01, 0.31, LOGE_X - 0.3, CY + 0.87, 4.7)
 	var casier := Examinable.new()
 	casier.title = "Casier de Sylvain"
 	casier.locked_description = "Un casier métallique fermé par un cadenas à code. Sans raison sérieuse, pas question de le forcer."
 	casier.description = "Vous forcez le cadenas. Derrière une veste pliée, une enveloppe blanche : six billets de 50 € neufs."
 	casier.examine_condition = "solved:faux_agent"
 	casier.examine_evidence = "billet"
-	casier.position = Vector3(LOGE_X - 0.25, CY + 0.9, 8.75)
+	casier.position = Vector3((LOGE_X - 0.25) * GUICHET_SIDE, CY + 0.9, 7.35)
 	_examinable_shape(casier, Vector3(0.5, 1.8, 0.55))
 	add_child(casier)
 
 	# porte de la loge, sur charnière (ouverte pendant les rondes de Sylvain)
 	loge_door = Node3D.new()
-	loge_door.position = Vector3(HALL_X + 0.06, CY, DOOR.y)
+	loge_door.position = Vector3((HALL_W + 0.06) * GUICHET_SIDE, CY, DOOR.y)
 	add_child(loge_door)
 	var leaf := PsxBuilder.new()
-	leaf.add(PsxGeo.box(0.05, 2.02, DOOR.y - DOOR.x), grey, PsxGeo.xf(Vector3(0, 1.01, -(DOOR.y - DOOR.x) / 2)))
+	leaf.add(PsxGeo.box(0.05, 2.02, DOOR.y - DOOR.x), dark, PsxGeo.xf(Vector3(0, 1.01, -(DOOR.y - DOOR.x) / 2)))
 	leaf.add(PsxGeo.box(0.07, 0.04, 0.12), M.inox, PsxGeo.xf(Vector3(0, 1.0, -(DOOR.y - DOOR.x) + 0.1)))
 	leaf.build(loge_door)
 	var leaf_body := StaticBody3D.new()
@@ -850,6 +905,41 @@ func _build_ticket_hall() -> void:
 	loge_door.add_child(leaf_body)
 
 	_build_gates()
+	_set_hall_mirror(false)
+
+
+## Mur carrelé de la salle, dans le plan x, avec frise et plinthe vertes.
+func _tiled_wall(x: float, z0: float, z1: float, facing: float) -> void:
+	var length := z1 - z0
+	var ry := PI / 2 if facing > 0 else -PI / 2
+	var mid := (z0 + z1) / 2
+	plane(M.carreau_salle, length, HALL_TOP - CY, x, (CY + HALL_TOP) / 2, mid, ry, length / TW, (HALL_TOP - CY) / TH)
+	plane(M.frise_verte, length, 0.14, x + facing * 0.01, VAULT_SPRING - 0.2, mid, ry, length / 0.6, 1)
+	plane(M.plinthe_verte, length, 0.22, x + facing * 0.01, CY + 0.11, mid, ry, length / 0.6, 1)
+
+
+## Voûtain entre deux poutres : berceau surbaissé tendu d'un mur à l'autre.
+func _vaulted_bay(m: Material, z0: float, z1: float) -> void:
+	var g := PsxGeo.empty()
+	var n_arc := 6
+	var n_len := 4
+	var cz := (z0 + z1) / 2
+	var half := (z1 - z0) / 2
+	for i in n_arc + 1:
+		var t := PI * i / n_arc
+		var z := cz + half * cos(t)
+		var y := VAULT_SPRING + (HALL_TOP - VAULT_SPRING) * sin(t)
+		for j in n_len + 1:
+			var xx := -HALL_W + 2 * HALL_W * j / n_len
+			g.p.append(Vector3(xx, y, z))
+			g.n.append(Vector3(0, -sin(t), -cos(t)))
+			g.uv.append(Vector2(xx / 2.0, float(i) / n_arc))
+	for i in n_arc:
+		for j in n_len:
+			var a := i * (n_len + 1) + j
+			var b := a + n_len + 1
+			g.i.append_array([a, b, a + 1, b, b + 1, a + 1])
+	add(g, m, Vector3.ZERO)
 
 
 ## Mur vertical (boîte) dans le plan x, de z0 à z1 et de y0 à y1.
@@ -857,8 +947,8 @@ func _wall_box(m: Material, x: float, z0: float, z1: float, y0: float, y1: float
 	box(m, 0.12, y1 - y0, z1 - z0, x, (y0 + y1) / 2, (z0 + z1) / 2, (z1 - z0) / 2, (y1 - y0) / 2)
 
 
-## Ligne de portillons en travers du couloir, avant le second escalier : trois caissons inox,
-## deux couloirs de passage, tripodes, et derrière, les poteaux des portes anti-fraude.
+## Au fond de la salle : à gauche les deux portes de sortie inox (fermées dans ce sens), à droite
+## quatre caissons de portillons et trois passages, puis les poteaux des portes anti-fraude.
 func _build_gates() -> void:
 	var steel := _mat("blanc", 0x6e7174)
 	var steel_light := _mat("blanc", 0xb2b5b8)
@@ -866,8 +956,19 @@ func _build_gates() -> void:
 	var arrow := _mat("blanc", 0x39d06a, false, true)
 	var red := _mat("blanc", 0xc8281e)
 	var purple := _mat("blanc", 0xb69ad8)
-	for i in 3:
-		var x := -0.97 + i * 0.97
+	# portes de sortie
+	for px in [-HALL_W + 0.1, -0.95]:
+		box(steel_light, 0.08, 2.1, 0.1, px, CY + 1.05, GATES_Z)
+	box(steel_light, HALL_W - 0.85, 0.1, 0.1, (-HALL_W - 0.85) / 2, CY + 2.1, GATES_Z)
+	box(M.noir, 0.7, 0.12, 0.02, (-HALL_W - 0.85) / 2, CY + 2.25, GATES_Z - 0.06)
+	for k in 2:
+		box(red, 0.08, 0.08, 0.01, (-HALL_W - 0.85) / 2 - 0.25 + k * 0.5, CY + 2.25, GATES_Z - 0.075)
+	for leaf_x in [-2.25, -1.4]:
+		box(steel, 0.8, 1.45, 0.05, leaf_x, CY + 0.85, GATES_Z)
+	_solid(Vector3(HALL_W - 0.85, 2.1, 0.12), Vector3((-HALL_W - 0.85) / 2, CY + 1.05, GATES_Z))
+	# portillons
+	for i in 4:
+		var x := -0.75 + i * 1.05
 		box(steel, 0.3, 0.9, 1.2, x, CY + 0.45, GATES_Z)
 		box(steel_light, 0.32, 0.12, 1.22, x, CY + 0.96, GATES_Z)               # dessus
 		box(steel_light, 0.32, 0.18, 0.3, x, CY + 1.08, GATES_Z - 0.45)          # tête arrondie
@@ -875,17 +976,15 @@ func _build_gates() -> void:
 		box(M.noir, 0.01, 0.16, 0.08, x - 0.155, CY + 0.6, GATES_Z - 0.5)
 		box(arrow, 0.012, 0.04, 0.05, x - 0.157, CY + 0.62, GATES_Z - 0.5)
 		box(red, 0.01, 0.1, 0.1, x - 0.155, CY + 0.42, GATES_Z - 0.5)
-		if i < 2:
-			# tripode côté couloir de passage (vers +x)
-			for k in 3:
-				var a := k * TAU / 3
-				add(PsxGeo.cylinder(0.018, 0.018, 0.42, 4), M.inox,
-					Vector3(x + 0.15 + 0.2 * cos(a) * 0.5 + 0.1, CY + 0.88 + 0.2 * sin(a) * 0.5, GATES_Z - 0.2), Vector3(0, 0, PI / 2 + a * 0.3))
-		# poteau de la porte anti-fraude, peint en vert en haut, battant ouvert
+		if i < 3:
+			# bras du tripode, en travers du passage
+			add(PsxGeo.cylinder(0.02, 0.02, 0.45, 4), M.inox, Vector3(x + 0.38, CY + 0.88, GATES_Z - 0.2), Vector3(0, 0, PI / 2))
+		# poteau de la porte anti-fraude, vert en haut, battant ouvert
 		box(steel_light, 0.08, 1.7, 0.18, x, CY + 0.85, GATES_Z + 0.75)
 		box(green, 0.085, 0.35, 0.185, x, CY + 1.55, GATES_Z + 0.75)
-		add(PsxGeo.cylinder(0.14, 0.14, 0.28, 8), steel_light, Vector3(x + (0.2 if i < 2 else -0.2), CY + 1.1, GATES_Z + 0.75))
+		add(PsxGeo.cylinder(0.14, 0.14, 0.28, 8), steel_light, Vector3(x + (0.2 if i < 3 else -0.2), CY + 1.1, GATES_Z + 0.75))
 		_solid(Vector3(0.3, 1.0, 1.2), Vector3(x, CY + 0.5, GATES_Z))
+	_solid(Vector3(HALL_W - 2.4, 1.0, 1.2), Vector3((HALL_W + 2.4) / 2, CY + 0.5, GATES_Z))   # bout de ligne
 
 
 # --- Kiosque à journaux et personnages du chapitre 1 ---------------------------
@@ -918,7 +1017,7 @@ func _build_kiosk() -> void:
 func _place_people() -> void:
 	var cast := [
 		["sylvain", "Sylvain, agent de station", {"coat": Color("#1f2a4a"), "pants": Color("#1b1f2b"), "skin": Color("#9c6f52"), "hair": Color("#1e1a18")},
-			false, SYLVAIN_GUICHET, PI / 2],
+			false, SYLVAIN_GUICHET, SYLVAIN_GUICHET_YAW],
 		["jo", "Un homme endormi", {"coat": Color("#4d463c"), "pants": Color("#3a3836"), "skin": Color("#b58a6c"), "hair": Color("#2a2420"), "hat": Color("#6a2a2a")},
 			true, Vector3(0.85, -3.24, 13.3), PI / 2],
 		["roche", "Mme Roche, kiosquière", {"coat": Color("#6b4a36"), "pants": Color("#3a3230"), "skin": Color("#d8b49a"), "hair": Color("#b5b0aa")},
@@ -943,10 +1042,10 @@ func _build_clues() -> void:
 	door.title = "Porte de service"
 	door.description = "Porte métallique verrouillée. Autour de la serrure, des rayures fraîches dans la peinture."
 	door.evidence_id = "serrure"
-	door.position = Vector3(-29.97, PY + 1.05, 21.4)
+	door.position = Vector3(-HALF + 0.03, PY + 1.05, 21.4)
 	_examinable_shape(door, Vector3(0.1, 2.1, 0.9))
 	add_child(door)
-	box(M.service, 0.06, 2.1, 0.9, -29.97, PY + 1.05, 21.4)
+	box(M.service, 0.06, 2.1, 0.9, -HALF + 0.03, PY + 1.05, 21.4)
 
 	# Badge glissé sous le dernier siège du quai.
 	var badge := Examinable.new()
@@ -973,7 +1072,7 @@ func _solid(size: Vector3, pos: Vector3, rot := Vector3.ZERO) -> CollisionShape3
 	var shape := CollisionShape3D.new()
 	shape.shape = BoxShape3D.new()
 	shape.shape.size = size
-	shape.position = pos
+	shape.position = Vector3(pos.x * _solid_side, pos.y, pos.z)
 	shape.rotation = rot
 	_collisions.add_child(shape)
 	return shape
@@ -1021,12 +1120,9 @@ func _build_colliders() -> Array[CollisionShape3D]:
 	_ramp(Vector3(0, 0, Z0), Vector3(0, -3.24, Z1), 2 * HX)
 	_ramp(Vector3(0, -3.24, 14), Vector3(0, PY, ZA), 2 * HX)
 	_solid(Vector3(2 * HX, 0.2, 14 - Z1), Vector3(0, -3.34, (Z1 + 14) / 2))
-	for sx in [-1, 1]:
-		if sx < 0:
-			_solid(Vector3(0.2, 3.6, 17), Vector3(sx * (HX + 0.1), -1.8, 5.5))
-		else:   # ouverture sur la salle des billets
-			_solid(Vector3(0.2, 3.6, HALL_Z0 + 3), Vector3(HX + 0.1, -1.8, (HALL_Z0 - 3) / 2))
-			_solid(Vector3(0.2, 3.6, 14 - HALL_Z1), Vector3(HX + 0.1, -1.8, (HALL_Z1 + 14) / 2))
+	for sx in [-1, 1]:   # murs de l'escalier de la rue, puis du couloir après la salle
+		_solid(Vector3(0.2, 3.6, Z1 - Z0), Vector3(sx * (HX + 0.1), -1.8, (Z0 + Z1) / 2))
+		_solid(Vector3(0.2, 3.6, 14 - HALL_Z1), Vector3(sx * (HX + 0.1), -1.8, (HALL_Z1 + 14) / 2))
 		_solid(Vector3(0.2, 5.9, 6.3), Vector3(sx * (HX + 0.1), -3.85, 17.15))
 
 	# Les deux quais, percés par les escaliers du passage.
@@ -1043,15 +1139,16 @@ func _build_colliders() -> Array[CollisionShape3D]:
 		if zw == ZA:
 			# le mur du quai A est percé par l'escalier qui descend du couloir
 			for sx in [-1, 1]:
-				_solid(Vector3(30 - HX, WT - PFLOOR, 0.2), Vector3(sx * (30 + HX) / 2, (PFLOOR + WT) / 2, zw - 0.1))
+				_solid(Vector3(HALF - HX, WT - PFLOOR, 0.2), Vector3(sx * (HALF + HX) / 2, (PFLOOR + WT) / 2, zw - 0.1))
 		else:
 			_solid(Vector3(L, WT - PFLOOR, 0.2), Vector3(0, (PFLOOR + WT) / 2, zw + 0.1))
 		for sx in [-1, 1]:
-			_solid(Vector3(0.2, 4, depth), Vector3(sx * 30.1, PY + 2, (zw + ze) / 2))
+			_solid(Vector3(0.2, 4, depth), Vector3(sx * (HALF + 0.1), PY + 2, (zw + ze) / 2))
 			# bouts de quai au-delà des rames : garde-fou permanent
-			_solid(Vector3(2.4, 2.0, 0.1), Vector3(sx * 28.9, PY + 1.0, ze - inward * 0.3))
+			var gap := HALF - MF01.HALF_LENGTH + 0.3
+			_solid(Vector3(gap, 2.0, 0.1), Vector3(sx * (HALF - gap / 2), PY + 1.0, ze - inward * 0.3))
 		# garde-fou le long des voies, ôté quand la rame est à quai
-		barriers.append(_solid(Vector3(56.0, 2.0, 0.1), Vector3(0, PY + 1.0, ze - inward * 0.3)))
+		barriers.append(_solid(Vector3(MF01.HALF_LENGTH * 2, 2.0, 0.1), Vector3(0, PY + 1.0, ze - inward * 0.3)))
 		# trémie de l'escalier : garde-corps, mur côté voies, rampe
 		_solid(Vector3(PX1 - PX0, 1.1, 0.06), Vector3((PX0 + PX1) / 2, PY + 0.55, zi))
 		_solid(Vector3(0.06, 1.1, PW), Vector3(PX1, PY + 0.55, zw + inward * PW / 2))
@@ -1060,27 +1157,34 @@ func _build_colliders() -> Array[CollisionShape3D]:
 
 	# Salle des billets et loge (la vitre du guichet est sur la couche 2 : elle arrête le
 	# détective, pas son regard ni ses photos).
-	_solid(Vector3(LOGE_X - HX, 0.2, HALL_Z1 - HALL_Z0), Vector3((HX + LOGE_X) / 2, CY - 0.1, (HALL_Z0 + HALL_Z1) / 2))
-	_solid(Vector3(LOGE_X - HX, 2.4, 0.2), Vector3((HX + LOGE_X) / 2, -2.1, HALL_Z0 - 0.1))
-	_solid(Vector3(HALL_X - HX, 2.4, 0.2), Vector3((HX + HALL_X) / 2, -2.1, HALL_Z1 + 0.1))
-	_solid(Vector3(0.2, 2.4, LOGE_Z1 - HALL_Z0), Vector3(LOGE_X + 0.1, -2.1, (HALL_Z0 + LOGE_Z1) / 2))
-	_solid(Vector3(LOGE_X - HALL_X, 2.4, 0.2), Vector3((HALL_X + LOGE_X) / 2, -2.1, LOGE_Z1 + 0.1))
-	for seg in [[HALL_Z0, WINDOW.x], [WINDOW.y, DOOR.x], [DOOR.y, HALL_Z1]]:
-		_solid(Vector3(0.12, 2.4, seg[1] - seg[0]), Vector3(HALL_X + 0.06, -2.1, (seg[0] + seg[1]) / 2))
-	_solid(Vector3(0.12, WINDOW.z - CY, WINDOW.y - WINDOW.x), Vector3(HALL_X + 0.06, (CY + WINDOW.z) / 2, (WINDOW.x + WINDOW.y) / 2))
+	_set_hall_mirror(true)
+	_solid(Vector3(LOGE_X + HALL_W, 0.2, HALL_Z1 - HALL_Z0), Vector3((LOGE_X - HALL_W) / 2, CY - 0.1, (HALL_Z0 + HALL_Z1) / 2))
+	_solid(Vector3(0.2, 2.4, HALL_Z1 - HALL_Z0), Vector3(-HALL_W - 0.1, -2.1, (HALL_Z0 + HALL_Z1) / 2))
+	_solid(Vector3(0.2, 2.4, LOGE_Z0 - HALL_Z0), Vector3(HALL_W + 0.1, -2.1, (HALL_Z0 + LOGE_Z0) / 2))
+	_solid(Vector3(0.2, 2.4, HALL_Z1 - LOGE_Z1), Vector3(HALL_W + 0.1, -2.1, (LOGE_Z1 + HALL_Z1) / 2))
+	for sx in [-1, 1]:
+		_solid(Vector3(HALL_W - HX, 2.4, 0.2), Vector3(sx * (HALL_W + HX) / 2, -2.1, HALL_Z0 - 0.1))
+		_solid(Vector3(HALL_W - HX, 2.4, 0.2), Vector3(sx * (HALL_W + HX) / 2, -2.1, HALL_Z1 + 0.1))
+	_solid(Vector3(0.2, 2.4, LOGE_Z1 - LOGE_Z0), Vector3(LOGE_X + 0.1, -2.1, (LOGE_Z0 + LOGE_Z1) / 2))
+	for z in [LOGE_Z0 - 0.1, LOGE_Z1 + 0.1]:
+		_solid(Vector3(LOGE_X - HALL_W, 2.4, 0.2), Vector3((HALL_W + LOGE_X) / 2, -2.1, z))
+	for seg in [[LOGE_Z0, WINDOW.x], [WINDOW.y, DOOR.x]]:
+		_solid(Vector3(0.12, 2.4, seg[1] - seg[0]), Vector3(HALL_W + 0.06, -2.1, (seg[0] + seg[1]) / 2))
+	_solid(Vector3(0.12, WINDOW.z - CY, WINDOW.y - WINDOW.x), Vector3(HALL_W + 0.06, (CY + WINDOW.z) / 2, (WINDOW.x + WINDOW.y) / 2))
 	var glass := StaticBody3D.new()
 	glass.collision_layer = 2
 	var pane := CollisionShape3D.new()
 	pane.shape = BoxShape3D.new()
 	pane.shape.size = Vector3(0.05, WINDOW.w - WINDOW.z, WINDOW.y - WINDOW.x)
-	pane.position = Vector3(HALL_X + 0.06, (WINDOW.z + WINDOW.w) / 2, (WINDOW.x + WINDOW.y) / 2)
+	pane.position = Vector3((HALL_W + 0.06) * GUICHET_SIDE, (WINDOW.z + WINDOW.w) / 2, (WINDOW.x + WINDOW.y) / 2)
 	glass.add_child(pane)
 	add_child(glass)
-	_solid(Vector3(0.55, 0.8, 2.0), Vector3(HALL_X + 0.4, CY + 0.4, 7.0))
-	_solid(Vector3(0.5, 0.9, 1.4), Vector3(LOGE_X - 0.3, CY + 0.45, 6.3))
-	_solid(Vector3(0.45, 1.8, 0.5), Vector3(LOGE_X - 0.25, CY + 0.9, 8.75))
-	_solid(Vector3(0.45, 1.7, 0.7), Vector3(HALL_X - 0.24, CY + 0.85, 9.7))
-	_solid(Vector3(0.4, 1.4, 0.5), Vector3(HALL_X - 0.21, CY + 0.7, 10.5))
+	_solid(Vector3(0.55, 0.8, 2.0), Vector3(HALL_W + 0.4, CY + 0.4, 5.15))
+	_solid(Vector3(0.5, 0.9, 1.4), Vector3(LOGE_X - 0.3, CY + 0.45, 4.5))
+	_solid(Vector3(0.45, 1.8, 0.5), Vector3(LOGE_X - 0.25, CY + 0.9, 7.35))
+	_solid(Vector3(0.45, 1.7, 0.7), Vector3(HALL_W - 0.24, CY + 0.85, 8.6))
+	_solid(Vector3(0.14, 0.4, 1.0), Vector3(-HALL_W + 0.07, CY + 1.3, 6.1))
+	_set_hall_mirror(false)
 
 	# Passage sous les voies.
 	_solid(Vector3(PX2 - PX1, 0.2, ZB - ZA), Vector3((PX1 + PX2) / 2, PFLOOR - 0.1, (ZA + ZB) / 2))

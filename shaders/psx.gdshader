@@ -25,6 +25,7 @@ global uniform vec3 zone_max;
 // seconde zone éclairée par des néons (salle des billets)
 global uniform vec3 zone2_min;
 global uniform vec3 zone2_max;
+global uniform vec3 zone2_color;
 global uniform vec3 fog_color;
 global uniform float fog_near;
 global uniform float fog_far;
@@ -55,9 +56,11 @@ void vertex() {
 
 	float under = smoothstep(-1.6, -0.15, wp.y);  // sous terre : pas de soleil
 	vec3 l = ambient_color * (0.22 + 0.78 * under) + sun_color * abs(dot(n, normalize(sun_dir))) * under * 0.8;
-	if ((all(greaterThan(wp, zone_min)) && all(lessThan(wp, zone_max)))
-			|| (all(greaterThan(wp, zone2_min)) && all(lessThan(wp, zone2_max)))) {
+	if (all(greaterThan(wp, zone_min)) && all(lessThan(wp, zone_max))) {
 		l += zone_color * (0.6 + 0.4 * abs(n.y));
+	}
+	if (all(greaterThan(wp, zone2_min)) && all(lessThan(wp, zone2_max))) {
+		l += zone2_color * (0.6 + 0.4 * abs(n.y));
 	}
 	for (int i = 0; i < 4; i++) {
 		l += lamp(wp, n, lamp_pos_a[i].xyz, lamp_col_a[i].xyz);

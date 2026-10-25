@@ -39,8 +39,8 @@ func _schedule(m: int) -> void:
 		if ronde:
 			sylvain.move_to(_station.SYLVAIN_QUAI, -PI / 2)
 		else:
-			sylvain.move_to(_station.SYLVAIN_GUICHET, PI / 2)
-		_station.loge_door.rotation.y = deg_to_rad(-100.0) if ronde else 0.0
+			sylvain.move_to(_station.SYLVAIN_GUICHET, _station.SYLVAIN_GUICHET_YAW)
+		_station.loge_door.rotation.y = deg_to_rad(_station.LOGE_DOOR_OPEN) if ronde else 0.0
 	if _kiosk_open and m >= Chapitre1.KIOSK_CLOSES:
 		_kiosk_open = false
 		var roche: Node = _station.people.get("roche")

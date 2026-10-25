@@ -32,7 +32,8 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
   sommet (soleil, néons du quai, lanternes), brouillard, jour et nuit ;
 - Monceau reconstruit d'après le prototype navigateur, aux mêmes cotes : boulevard de Courcelles,
   bouche Guimard, totem, candélabre, Rotonde et grilles du parc, immeubles, deux escaliers,
-  couloir, quai, voûte, deux voies, tunnels, avec les 49 textures tirées des photos ;
+  couloir, quai, voûte, deux voies, tunnels, avec les 49 textures tirées des photos ; alignée sur
+  la vraie station : quais de 75 m, sièges verts « Motte », rames MF01 de cinq voitures ;
 - les deux quais sont accessibles : un passage sous les voies relie le quai direction
   Porte Dauphine au quai direction Nation (escalier le long du mur de chaque quai) ;
 - rames MF01 sur les deux voies, une toutes les 94 s : arrivée, ouverture des portes, bip de
@@ -59,9 +60,9 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
   parle qu'à la vue de la photo du voyageur, Sylvain avoue une fois la déduction faite ; les
   témoignages s'ajoutent au dossier.
 
-- le chapitre 1 jouable de bout en bout : salle des billets entre les deux escaliers (guichet
-  « Services », automates, loge de l'agent avec cahier et casier), portillons avant le second
-  escalier ; Sylvain au guichet, en ronde sur le quai toutes les 20 min à partir de 23 h 18 (la
+- le chapitre 1 jouable de bout en bout : salle des billets au bas de l'escalier de la rue, d'après
+  une photo de la vraie salle (voûtains entre poutres rivetées, frise verte, guichet « Services » à
+  droite avec la loge de l'agent, automate « Tickets », portes de sortie et portillons au fond) ; Sylvain au guichet, en ronde sur le quai toutes les 20 min à partir de 23 h 18 (la
   porte de sa loge reste alors entrouverte) ; kiosque qui ferme à 23 h 20 ; appli Recherche à la
   surface (la photo du voyageur, publiée en ligne) ; casier ouvrable après la déduction (billets) ;
   messages d'aide de Nadia après 10 min sans avancer ; fin du chapitre en montant dans la rame
@@ -81,6 +82,8 @@ les voies (carreaux blancs, frise brune, voûte blanche, sol gris foncé), escal
 avec bande d'éveil et main courante, panneaux de direction blancs (Ⓜ ② terminus →, bande
 « Sortie »), plans de ligne sur les quais (examinables, avec les correspondances), porte de
 service métallique au bout du quai. Liste des stations : plan de ligne RATP (11.2023).
+
+Crédits des photos et données utilisées : voir `CREDITS.md`.
 
 ## Organisation
 

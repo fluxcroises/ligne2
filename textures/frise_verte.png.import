@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dp6u0dvho4b1v"
-path="res://.godot/imported/frise.png-cc9dfa5502a4699e14062327028d594b.ctex"
+uid="uid://ciy0iycpi87uo"
+path="res://.godot/imported/frise_verte.png-9324894fabf26d7c8e01d8730852a01a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://textures/frise.png"
-dest_files=["res://.godot/imported/frise.png-cc9dfa5502a4699e14062327028d594b.ctex"]
+source_file="res://textures/frise_verte.png"
+dest_files=["res://.godot/imported/frise_verte.png-9324894fabf26d7c8e01d8730852a01a.ctex"]
 
 [params]
 

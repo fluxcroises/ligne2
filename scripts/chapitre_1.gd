@@ -9,7 +9,7 @@ const EVIDENCE := {
 	"karim": {"kind": "photo", "title": "Photo de Karim",
 		"text": "Karim Benali, 47 ans, conducteur sur la ligne 2 depuis vingt ans. Envoyée par Nadia."},
 	"badge": {"kind": "photo", "title": "Badge RATP de Karim",
-		"text": "Trouvé sous un siège orange, au bout du quai direction Porte Dauphine."},
+		"text": "Trouvé sous un siège vert, au bout du quai direction Porte Dauphine."},
 	"serrure": {"kind": "photo", "title": "Serrure rayée",
 		"text": "Porte de service au bout du quai : des rayures fraîches autour de la serrure."},
 	"photo_voyageur": {"kind": "photo", "title": "Photo d'un voyageur",
