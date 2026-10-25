@@ -44,8 +44,11 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 - joueur en vue subjective, visée d'objets et fenêtre d'examen ; deux indices provisoires
   (badge de Karim sous un siège, porte de service rayée au bout du quai).
 
-Les panneaux « Direction Nation » et « Sortie et direction Pte Dauphine » du passage sont dessinés
-par le jeu en attendant une photo.
+Habillages dessinés d'après des photos prises comme modèles (aucun pixel copié) : passage sous
+les voies (carreaux blancs, frise brune, voûte blanche, sol gris foncé), escaliers à nez en inox
+avec bande d'éveil et main courante, panneaux de direction blancs (Ⓜ ② terminus →, bande
+« Sortie »), plans de ligne sur les quais (examinables, avec les correspondances), porte de
+service métallique au bout du quai. Liste des stations : plan de ligne RATP (11.2023).
 
 ## Organisation
 
@@ -54,6 +57,7 @@ par le jeu en attendant une photo.
 | `scenes/` | `main.tscn` (Monceau), `player.tscn` |
 | `scripts/monceau.gd` | construction du lieu, collisions, jour / nuit, noms des lieux |
 | `scripts/mf01.gd` | une rame MF01 : caisse, intérieur, portes, collisions |
+| `scripts/panneaux.gd` | panneaux RATP dessinés par le jeu, liste des stations de la ligne 2 |
 | `scripts/trafic.gd` | cycle des passages, montée à bord, écrans des prochains passages, sons |
 | `scripts/psx_geo.gd`, `psx_builder.gd` | primitives à la manière de three.js, fusion par matériau |
 | `scripts/` (autres) | joueur, contrôles, interface, objets à examiner |

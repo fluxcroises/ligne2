@@ -204,7 +204,8 @@ func _make_materials() -> void:
 		"nom": _mat("nom_quai"), "nepas": _mat("nepas"), "direction": _mat("direction"),
 		"sortieQ": _mat("sortie_quai"), "alarme": _mat("alarme"), "repere": _mat("repere"), "descente": _mat("descente"),
 		"seat": _mat("blanc", 0xec7a1c), "inox": _mat("blanc", 0xb4b8bc), "tunnel": _mat("pierre", 0x5e5c58),
-		"service": _mat("blanc", 0x3e4a45),
+		"service": _mat("porte_service"), "marche": _mat("sol_quai", 0xb0b0b0),
+		"platre": _mat("blanc", 0xbdbab1), "frise": _mat("frise"),
 		# rames MF01
 		"rameCote": _mat("rame_cote", 0xffffff, true), "rameFace": _mat("rame_face"),
 		"rameBlanc": _mat("blanc", 0xe6e4dc), "rameNoir": _mat("blanc", 0x1a1a1c),
@@ -609,26 +610,38 @@ func _build_trees() -> void:
 
 # --- Passage sous les voies, vers le quai direction Nation --------------------
 # Chaque quai a un escalier le long de son mur ; il descend vers +x jusqu'à un passage
-# qui file sous les voies d'un quai à l'autre.
+# qui file sous les voies d'un quai à l'autre. Habillage d'après des photos de couloirs et
+# d'escaliers du métro prises comme modèles : carreaux blancs biseautés, frise brune, voûte
+# peinte en blanc, sol gris foncé, marches à nez en inox, main courante brune.
 
 const STEP := (PY - PFLOOR) / 15.0
+const PSPRING := PCEIL - 0.45    # naissance de la voûte du passage
 
 
 func _build_passage() -> void:
-	var to_nation := _sign_material("Direction", "Nation")
-	var to_exit := _sign_material("Sortie et direction", "Pte Dauphine")
+	var to_nation := _sign([["ligne", "Nation"]])
+	var to_exit := _sign([["ligne", "Pte Dauphine"], ["sortie", "Sortie"]])
 	for well in [[ZA, 1.0, to_nation], [ZB, -1.0, to_exit]]:
 		var zw: float = well[0]          # mur du quai
 		var inward: float = well[1]      # sens du mur vers les voies
 		var zc := zw + inward * PW / 2   # axe de l'escalier
 		var zi := zw + inward * PW       # bord de la trémie côté voies
+		# marches grises à nez en inox, bande d'éveil en haut
 		for i in 15:
 			var top := PY - (i + 1) * STEP
-			box(M.pierreS, 0.5, top - PFLOOR + 0.3, PW, PX0 + i * 0.5 + 0.25, (top + PFLOOR - 0.3) / 2, zc, 1, 2)
+			var x := PX0 + i * 0.5 + 0.25
+			box(M.marche, 0.5, top - PFLOOR + 0.3, PW, x, (top + PFLOOR - 0.3) / 2, zc, 1, 2)
+			box(M.inox, 0.05, 0.02, PW, x - 0.225, top + 0.01, zc)
+		rect(M.bande, PX0 - 0.6, minf(zw, zi), PX0, maxf(zw, zi), PY + 0.006, 0.55)
+		# murs de la trémie : carreaux, plinthe brune
 		var depth := PY - PFLOOR
-		plane(M.carrelage, PX1 - PX0, depth, (PX0 + PX1) / 2, (PY + PFLOOR) / 2, zw, 0, 10, 5.5)
-		plane(M.carrelage, PX1 - PX0, depth, (PX0 + PX1) / 2, (PY + PFLOOR) / 2, zi, 0, 10, 5.5)
-		plane(M.carrelage, PW, PY - PCEIL, PX1, (PY + PCEIL) / 2, zc, PI / 2, 2, 2.4)   # nez de la dalle
+		for z in [zw, zi]:
+			plane(M.carreau, PX1 - PX0, depth, (PX0 + PX1) / 2, (PY + PFLOOR) / 2, z - inward * 0.01 * signf(z - zc), 0, (PX1 - PX0) / TW, depth / TH)
+		plane(M.carreau, PW, PY - PSPRING, PX1, (PY + PSPRING) / 2, zc, PI / 2, PW / TW, (PY - PSPRING) / TH)   # bout de la dalle
+		# main courante le long du mur
+		var rail_len := Vector2(PX1 - PX0, depth).length()
+		add(PsxGeo.box(rail_len, 0.04, 0.04), M.candPost, Vector3((PX0 + PX1) / 2, (PY + PFLOOR) / 2 + 0.9, zw + inward * 0.06),
+			Vector3(0, 0, -atan2(depth, PX1 - PX0)))
 		# garde-corps autour de la trémie
 		plane(M.gardecorps, PX1 - PX0, 1.0, (PX0 + PX1) / 2, PY + 0.5, zi, 0, PX1 - PX0, 1)
 		plane(M.gardecorps, PW, 1.0, PX1, PY + 0.5, zc, PI / 2, PW, 1)
@@ -636,64 +649,78 @@ func _build_passage() -> void:
 		box(M.fonte, 0.05, 0.05, PW, PX1, PY + 1.0, zc)
 		# panneau suspendu au-dessus du haut de l'escalier, lisible des deux côtés
 		var sign_m: Material = well[2]
+		var sign_h := 0.25 * (2 if sign_m == to_exit else 1)
 		for r in [PI / 2, -PI / 2]:
-			plane(sign_m, 1.5, 0.5, PX0 - 0.4 + (0.03 if r > 0 else -0.03), -4.3, zc, r)
-		box(M.fonteDark, 0.04, 0.52, 1.52, PX0 - 0.4, -4.3, zc)
-		box(M.inox, 0.03, 1.4, 0.03, PX0 - 0.4, -3.35, zc)
+			plane(sign_m, 1.5, sign_h * 2, PX0 - 0.4 + (0.03 if r > 0 else -0.03), -4.3, zc, r)
+		box(M.fonteDark, 0.04, sign_h * 2 + 0.02, 1.52, PX0 - 0.4, -4.3, zc)
+		box(M.inox, 0.03, 1.4 - sign_h + 0.25, 0.03, PX0 - 0.4, -3.35 - (sign_h - 0.25) / 2, zc)
 
-	# le passage
-	var h := PCEIL - PFLOOR
-	var yc := (PCEIL + PFLOOR) / 2
+	# le passage : murs carrelés, frise brune, plinthe, voûte blanche, sol gris foncé
 	var mid := (ZA + ZB) / 2
-	rect(M.pierreS, PX1, ZA, PX2, ZB, PFLOOR, 1.2)
-	rect(M.carrelage, PX1, ZA, PX2, ZB, PCEIL, 0.8, PI / 2)
-	plane(M.carrelage, ZB - ZA, h, PX2, yc, mid, PI / 2, (ZB - ZA) / 0.77, h / 0.72)
-	plane(M.carrelage, ZB - ZA - 2 * PW, h, PX1, yc, mid, PI / 2, (ZB - ZA - 2 * PW) / 0.77, h / 0.72)
-	plane(M.carrelage, PX2 - PX1, h, (PX1 + PX2) / 2, yc, ZA, 0, 3, h / 0.72)
-	plane(M.carrelage, PX2 - PX1, h, (PX1 + PX2) / 2, yc, ZB, 0, 3, h / 0.72)
+	var wall_h := PSPRING - PFLOOR
+	rect(M.sol, PX1, ZA, PX2, ZB, PFLOOR, 2.4)
+	for wall in [[PX2, ZB - ZA, mid], [PX1, ZB - ZA - 2 * PW, mid]]:
+		var x: float = wall[0]
+		var length: float = wall[1]
+		plane(M.carreau, length, wall_h, x, (PFLOOR + PSPRING) / 2, wall[2], PI / 2, length / TW, wall_h / TH)
+		plane(M.frise, length, 0.14, x + (0.01 if x < PX2 else -0.01), PSPRING - 0.07, wall[2], PI / 2, length / 0.6, 1)
+		plane(M.plinthe, length, 0.2, x + (0.01 if x < PX2 else -0.01), PFLOOR + 0.1, wall[2], PI / 2, length / 0.6, 1)
+	for z in [ZA, ZB]:
+		plane(M.carreau, PX2 - PX1, PCEIL - PFLOOR, (PX1 + PX2) / 2, (PCEIL + PFLOOR) / 2, z, 0, (PX2 - PX1) / TW, (PCEIL - PFLOOR) / TH)
+	_build_passage_vault()
 	box(M.neon, 0.15, 0.05, ZB - ZA - 2, (PX1 + PX2) / 2, PCEIL - 0.03, mid)
 	# au pied de chaque escalier, un panneau sur le mur d'en face
-	plane(to_nation, 1.5, 0.5, PX2 - 0.02, -9.0, ZA + PW / 2 + 1.0, -PI / 2)
-	plane(to_exit, 1.5, 0.5, PX2 - 0.02, -9.0, ZB - PW / 2 - 1.0, -PI / 2)
+	plane(to_nation, 1.5, 0.5, PX2 - 0.02, -9.1, ZA + PW / 2 + 1.0, -PI / 2)
+	plane(to_exit, 1.5, 1.0, PX2 - 0.02, -9.35, ZB - PW / 2 - 1.2, -PI / 2)
+
+	# plans de ligne sur les quais, examinables
+	for p in [["Porte Dauphine", Vector3(-21.7, -4.98, ZA + 0.03), 0.0], ["Nation", Vector3(-2.0, -4.98, ZB - 0.03), PI]]:
+		var terminus: String = p[0]
+		var pos: Vector3 = p[1]
+		var m := _sign_from_texture(Panneaux.line_plan(self, "Monceau", terminus))
+		plane(m, 0.9, 1.6, pos.x, pos.y, pos.z, p[2])
+		var item := Examinable.new()
+		item.title = "Plan de la ligne 2"
+		item.description = Panneaux.line_plan_text("Monceau", terminus)
+		item.position = pos
+		_examinable_shape(item, Vector3(0.9, 1.6, 0.15))
+		add_child(item)
 
 
-## Panneau bleu RATP dessiné à la volée (en attendant une photo) : pastille de la ligne 2,
-## une ligne de texte fine, une ligne en gras.
-func _sign_material(small: String, big: String) -> ShaderMaterial:
-	var vp := SubViewport.new()
-	vp.size = Vector2i(96, 32)
-	vp.disable_3d = true
-	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-	add_child(vp)
-	var bg := ColorRect.new()
-	bg.color = Color("#1b3a9a")
-	bg.size = Vector2(96, 32)
-	vp.add_child(bg)
-	var disc := Panel.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color("#ffffff")
-	style.set_corner_radius_all(7)
-	disc.add_theme_stylebox_override("panel", style)
-	disc.position = Vector2(4, 9)
-	disc.size = Vector2(14, 14)
-	vp.add_child(disc)
-	for line in [["2", Color("#1b3a9a"), 12, Vector2(4, 8), Vector2(14, 16)],
-			[small, Color("#dfe6ff"), 7, Vector2(22, 4), Vector2(72, 10)],
-			[big, Color.WHITE, 11, Vector2(22, 13), Vector2(72, 16)]]:
-		var l := Label.new()
-		l.text = line[0]
-		l.add_theme_color_override("font_color", line[1])
-		l.add_theme_font_size_override("font_size", line[2])
-		l.position = line[3]
-		l.size = line[4]
-		if line[0] == "2":
-			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		vp.add_child(l)
+## Voûte surbaissée du passage, d'un mur à l'autre, sur toute sa longueur.
+func _build_passage_vault() -> void:
+	var g := PsxGeo.empty()
+	var n_arc := 8
+	var n_len := 14
+	var cx := (PX1 + PX2) / 2
+	var half := (PX2 - PX1) / 2
+	for i in n_arc + 1:
+		var t := PI * i / n_arc
+		var x := cx + half * cos(t)
+		var y := PSPRING + (PCEIL - PSPRING) * sin(t)
+		for j in n_len + 1:
+			var z := ZA + (ZB - ZA) * j / n_len
+			g.p.append(Vector3(x, y, z))
+			g.n.append(Vector3(-cos(t), -sin(t), 0))
+			g.uv.append(Vector2(z / 2.0, float(i) / n_arc))
+	for i in n_arc:
+		for j in n_len:
+			var a := i * (n_len + 1) + j
+			var b := a + n_len + 1
+			g.i.append_array([a, b, a + 1, b, b + 1, a + 1])
+	add(g, M.platre, Vector3.ZERO)
+
+
+func _sign(rows: Array) -> ShaderMaterial:
+	return _sign_from_texture(Panneaux.direction(self, rows))
+
+
+## Matériau d'un panneau dessiné : légèrement lumineux, comme un panneau émaillé sous les néons.
+func _sign_from_texture(tex: Texture2D) -> ShaderMaterial:
 	var m: ShaderMaterial = M.inox.duplicate()
-	m.set_shader_parameter("albedo_texture", vp.get_texture())
+	m.set_shader_parameter("albedo_texture", tex)
 	m.set_shader_parameter("albedo_color", Vector3.ONE)
-	m.set_shader_parameter("emission", Vector3(0.25, 0.25, 0.25))
+	m.set_shader_parameter("emission", Vector3(0.2, 0.2, 0.2))
 	return m
 
 
@@ -708,7 +735,6 @@ func _build_clues() -> void:
 	_examinable_shape(door, Vector3(0.1, 2.1, 0.9))
 	add_child(door)
 	box(M.service, 0.06, 2.1, 0.9, -29.97, PY + 1.05, 21.4)
-	box(M.inox, 0.04, 0.05, 0.14, -29.92, PY + 1.0, 21.75)
 
 	# Badge glissé sous le dernier siège du quai.
 	var badge := Examinable.new()
