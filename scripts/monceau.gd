@@ -331,6 +331,9 @@ func _build_entrance() -> void:
 	box(M.fonte, 0.05, 0.05, 6.3, -1.3, 1.41, 0)
 	box(M.fonte, 0.05, 0.05, 6.3, 1.3, 1.41, 0)
 	box(M.fonte, 2.95, 0.05, 0.05, 0, 1.41, 3.0)
+	# contremarches en haut des volées (le sol au-dessus n'a pas d'épaisseur)
+	plane(M.pierreS, 2 * HX, 0.3, 0, -0.15, Z0, 0, 2, 0.3)
+	plane(M.pierreS, 2 * HX, 0.3, 0, -3.39, 14.0, 0, 2, 0.3)
 	# premier escalier
 	for i in 12:
 		var top := -(i + 1) * 0.27
@@ -678,6 +681,7 @@ func _build_passage() -> void:
 			box(M.marche, 0.5, top - PFLOOR + 0.3, PW, x, (top + PFLOOR - 0.3) / 2, zc, 1, 2)
 			box(M.inox, 0.05, 0.02, PW, x - 0.225, top + 0.01, zc)
 		rect(M.bande, PX0 - 0.6, minf(zw, zi), PX0, maxf(zw, zi), PY + 0.006, 0.55)
+		plane(M.marche, PW, STEP + 0.02, PX0, PY - STEP / 2, zc, PI / 2, 1, 0.3)   # contremarche du haut
 		# murs de la trémie : carreaux, plinthe brune
 		var depth := PY - PFLOOR
 		for z in [zw, zi]:
@@ -790,7 +794,8 @@ const GATES_Z := 9.9           # ligne des portillons
 const LOGE_X := 5.4            # fond de la loge
 const LOGE_Z0 := 3.6
 const LOGE_Z1 := 7.9
-const WINDOW := Vector4(4.0, 6.3, -2.19, -1.24)   # vitre du guichet : z0, z1, y0, y1
+const WINDOW := Vector4(4.0, 6.3, -2.19, -1.55)   # vitre du guichet : z0, z1, y0, y1
+const BAND_Y := -1.4           # bandeaux « Services » et « Tickets » : sous les poutres, sur la vitre
 const DOOR := Vector2(6.9, 7.7)                    # porte de la loge : z0, z1
 const SYLVAIN_GUICHET := Vector3(3.55 * GUICHET_SIDE, CY, 5.15)
 const SYLVAIN_GUICHET_YAW := PI / 2 * GUICHET_SIDE
@@ -852,11 +857,11 @@ func _build_ticket_hall() -> void:
 	box(dark, 0.04, 1.0, DOOR.x - WINDOW.y, HALL_W - 0.01, CY + 0.5, (WINDOW.y + DOOR.x) / 2)
 	box(white, 0.3, 0.05, WINDOW.y - WINDOW.x, HALL_W - 0.12, WINDOW.z, (WINDOW.x + WINDOW.y) / 2)   # tablette
 	box(M.inox, 0.03, 0.03, WINDOW.y - WINDOW.x, HALL_W, WINDOW.w - 0.02, (WINDOW.x + WINDOW.y) / 2)
-	_hall_sign(services, DOOR.x - LOGE_Z0 - 0.2, 0.3, HALL_W - 0.04, -1.05, (LOGE_Z0 + DOOR.x) / 2, -PI / 2)
+	_hall_sign(services, DOOR.x - LOGE_Z0 - 0.2, 0.24, HALL_W - 0.04, BAND_Y, (LOGE_Z0 + DOOR.x) / 2, -PI / 2)
 	box(_mat("blanc", 0xd8d8d4), 0.45, 1.7, 0.7, HALL_W - 0.24, CY + 0.85, 8.6)   # automate « Tickets »
 	box(M.noir, 0.02, 0.3, 0.4, HALL_W - 0.47, CY + 1.25, 8.6)
 	box(_mat("blanc", 0x7a3aa8), 0.02, 0.35, 0.3, HALL_W - 0.47, CY + 0.6, 8.6)
-	_hall_sign(tickets, 1.1, 0.3, HALL_W - 0.04, -1.05, 8.6, -PI / 2)
+	_hall_sign(tickets, 1.1, 0.24, HALL_W - 0.04, BAND_Y, 8.6, -PI / 2)
 
 	# la loge : sol, plafond, murs, comptoir, bureau, cahier, casier
 	var h := CC - CY
