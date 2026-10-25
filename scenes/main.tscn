@@ -1,0 +1,46 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/monceau_greybox.gd" id="1_station"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="3_hud"]
+[ext_resource type="Shader" path="res://shaders/psx_post.gdshader" id="4_post"]
+
+[sub_resource type="Environment" id="Environment_night"]
+background_mode = 1
+background_color = Color(0.015, 0.015, 0.02, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.42, 0.41, 0.38, 1)
+ambient_light_energy = 0.8
+fog_enabled = true
+fog_light_color = Color(0.02, 0.02, 0.025, 1)
+fog_density = 0.045
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_post"]
+shader = ExtResource("4_post")
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_night")
+
+[node name="Monceau" type="Node3D" parent="."]
+script = ExtResource("1_station")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector3(-20, 0.05, 5)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="PostProcess" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="Psx15bit" type="ColorRect" parent="PostProcess"]
+material = SubResource("ShaderMaterial_post")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("3_hud")
