@@ -379,8 +379,8 @@ func _build_station() -> void:
 		var m: Material = trafic.siel_materials[screen[1]]
 		for x in [5, -17]:
 			for r in [PI / 2, -PI / 2]:
-				plane(m, 1.6, 0.6, x + (0.03 if r > 0 else -0.03), -3.5, z, r)
-			box(M.fonteDark, 0.04, 0.62, 1.62, x, -3.5, z)
+				plane(m, 1.6, 0.76, x + (0.03 if r > 0 else -0.03), -3.5, z, r)
+			box(M.fonteDark, 0.04, 0.78, 1.62, x, -3.5, z)
 			box(M.inox, 0.03, 1.0, 0.03, x, -2.7, z)
 
 	# sièges « Motte » orange

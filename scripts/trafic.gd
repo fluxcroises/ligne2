@@ -36,6 +36,7 @@ func setup(M: Dictionary, rails_y: float, floor_height: float, tracks: Array, ba
 		var m: ShaderMaterial = M.inox.duplicate()
 		m.set_shader_parameter("albedo_texture", siel.viewport.get_texture())
 		m.set_shader_parameter("albedo_color", Vector3.ONE)
+		m.set_shader_parameter("emission", Vector3(0.7, 0.7, 0.7))   # écran rétroéclairé
 		siel_materials.append(m)
 	_rumble = AudioStreamPlayer.new()
 	_rumble.stream = _rumble_stream()
@@ -128,35 +129,49 @@ func _physics_process(delta: float) -> void:
 
 
 # --- Écran des prochains passages (SIEL) --------------------------------------
+# Mise en page des écrans actuels de la RATP : bandeau blanc (Ⓜ, ②, terminus en bleu nuit,
+# horloge jaune sur fond noir), puis les deux prochains passages en grands chiffres jaunes.
+# Le premier chiffre s'assombrit quand la rame est à quai (0 minute).
+
+const SIEL_SIZE := Vector2i(128, 61)
+const SIEL_YELLOW := Color("#ffbf00")
+const SIEL_YELLOW_DIM := Color("#7a5a00")
+const SIEL_NAVY := Color("#0b0a86")
+
 
 func _make_siel(destination: String) -> Dictionary:
 	var vp := SubViewport.new()
-	vp.size = Vector2i(128, 48)
+	vp.size = SIEL_SIZE
 	vp.disable_3d = true
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	add_child(vp)
-	_rect(vp, Color("#ecebe5"), Rect2(0, 0, 128, 14))
-	_disc(vp, Color("#ecebe5"), Color("#14286e"), Vector2(8, 7), "M")
-	_disc(vp, Color("#1d5fd0"), Color.TRANSPARENT, Vector2(20, 7), "2")
-	_text(vp, "Pte Dauphine" if destination == "Porte Dauphine" else destination, Color("#14286e"), 10, Vector2(29, 1))
-	_rect(vp, Color("#101114"), Rect2(0, 14, 72, 30))
-	_text(vp, "1er métro", Color("#f0f0f0"), 6, Vector2(4, 15))
-	_text(vp, "2e métro", Color("#f0f0f0"), 6, Vector2(38, 15))
-	_rect(vp, Color("#dddddd"), Rect2(35, 24, 1, 17))
-	var first := _text(vp, "1", Color("#f2b51e"), 18, Vector2(12, 22))
-	var second := _text(vp, "2", Color("#f2b51e"), 18, Vector2(44, 22))
-	_rect(vp, Color("#f4f4f2"), Rect2(72, 14, 56, 30))
-	_text(vp, "Attentifs,\nensemble", Color("#14286e"), 6, Vector2(75, 19))
-	_rect(vp, Color("#3a3418"), Rect2(100, 15, 27, 9))
-	var clock := _text(vp, "23:05", Color("#f2c94c"), 7, Vector2(102, 15))
-	_rect(vp, Color("#3d8a4a"), Rect2(0, 44, 128, 4))
+	var bold := FontVariation.new()
+	bold.base_font = ThemeDB.fallback_font
+	bold.variation_embolden = 0.9
+	_rect(vp, Color.BLACK, Rect2(0, 0, 128, 61))
+	_rect(vp, Color.WHITE, Rect2(0, 0, 128, 13))
+	_disc(vp, Color.WHITE, Color("#263040"), Vector2(7, 6.5), "M")
+	_disc(vp, Color("#0055c8"), Color.TRANSPARENT, Vector2(18, 6.5), "2")
+	_text(vp, destination, SIEL_NAVY, 10, Vector2(26, -1), bold)
+	_rect(vp, Color.BLACK, Rect2(107, 0, 21, 9))
+	var clock := _text(vp, "23:05", SIEL_YELLOW, 7, Vector2(109, -0.5))
+	_text(vp, "1er métro", Color.WHITE, 6, Vector2(3, 19))
+	_text(vp, "2e métro", Color.WHITE, 6, Vector2(34, 19))
+	_rect(vp, Color.WHITE, Rect2(31, 31, 1, 17))
+	var first := _text(vp, "0", SIEL_YELLOW, 20, Vector2(4, 26), bold)
+	var second := _text(vp, "3", SIEL_YELLOW, 20, Vector2(36, 26), bold)
+	for l in [first, second]:
+		l.size = Vector2(22, 24)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return {"viewport": vp, "first": first, "second": second, "clock": clock}
 
 
 func _update_siel(siel: Dictionary, train: MF01) -> void:
 	var k := fposmod(time + train.offset, CYCLE)
 	var wait := 9.0 - k if k < 9.0 else (0.0 if k < 27.0 else CYCLE - k + 9.0)
-	siel.first.text = str(ceili(wait / 60.0))
+	var first := ceili(wait / 60.0)
+	siel.first.text = str(first)
+	siel.first.add_theme_color_override("font_color", SIEL_YELLOW_DIM if first == 0 else SIEL_YELLOW)
 	siel.second.text = str(ceili((wait + CYCLE) / 60.0))
 	siel.clock.text = clock_text()
 
@@ -186,8 +201,10 @@ func _disc(parent: Node, fill: Color, ring: Color, center: Vector2, letter: Stri
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
-func _text(parent: Node, s: String, color: Color, font_size: int, pos: Vector2) -> Label:
+func _text(parent: Node, s: String, color: Color, font_size: int, pos: Vector2, font: Font = null) -> Label:
 	var l := Label.new()
+	if font:
+		l.add_theme_font_override("font", font)
 	l.text = s
 	l.position = pos
 	l.add_theme_color_override("font_color", color)
