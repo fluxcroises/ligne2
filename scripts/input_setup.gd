@@ -16,6 +16,7 @@ func _ready() -> void:
 	_action("run", [KEY_SHIFT], [JOY_BUTTON_LEFT_STICK], [])
 	_action("interact", [KEY_E], [JOY_BUTTON_A], [], [MOUSE_BUTTON_LEFT])
 	_action("phone", [KEY_TAB], [JOY_BUTTON_Y], [])
+	_action("toggle_night", [KEY_N], [JOY_BUTTON_BACK], [])
 	_action("pause", [KEY_ESCAPE], [JOY_BUTTON_START], [])
 
 

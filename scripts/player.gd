@@ -4,8 +4,8 @@ extends CharacterBody3D
 signal focus_changed(examinable: Examinable)
 signal examined(examinable: Examinable)
 
-@export var walk_speed := 1.8
-@export var run_speed := 3.6
+@export var walk_speed := 3.0
+@export var run_speed := 6.0
 @export var acceleration := 12.0
 @export var mouse_sensitivity := 0.0025
 @export var pad_look_speed := 2.4

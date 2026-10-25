@@ -41,3 +41,62 @@ renderer/rendering_method.mobile="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
 textures/default_filters/use_nearest_mipmap_filter=true
 anti_aliasing/quality/msaa_3d=0
+
+[shader_globals]
+
+psx_resolution={
+"type": "vec2",
+"value": Vector2(320, 240)
+}
+sun_dir={
+"type": "vec3",
+"value": Vector3(0.45, 0.8, 0.35)
+}
+sun_color={
+"type": "vec3",
+"value": Vector3(1, 0.96, 0.86)
+}
+ambient_color={
+"type": "vec3",
+"value": Vector3(0.52, 0.56, 0.62)
+}
+zone_color={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+zone_min={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+zone_max={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+fog_color={
+"type": "vec3",
+"value": Vector3(0.81, 0.86, 0.89)
+}
+fog_near={
+"type": "float",
+"value": 18.0
+}
+fog_far={
+"type": "float",
+"value": 78.0
+}
+lamp_pos_a={
+"type": "mat4",
+"value": Projection(0, -99, 0, 0, 0, -99, 0, 0, 0, -99, 0, 0, 0, -99, 0, 0)
+}
+lamp_pos_b={
+"type": "mat4",
+"value": Projection(0, -99, 0, 0, 0, -99, 0, 0, 0, -99, 0, 0, 0, -99, 0, 0)
+}
+lamp_col_a={
+"type": "mat4",
+"value": Projection(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+}
+lamp_col_b={
+"type": "mat4",
+"value": Projection(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+}
