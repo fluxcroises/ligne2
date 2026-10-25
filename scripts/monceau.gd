@@ -351,8 +351,8 @@ func _build_entrance() -> void:
 	for i in 12:
 		var top := -3.24 - (i + 1) * 0.27
 		box(M.pierreS, 2 * HX, top + 6.7, 0.5, 0, (top - 6.7) / 2, 14 + i * 0.5 + 0.25, 2, 1)
-	plane(M.carrelage, 6.3, 5.9, -HX, -3.85, 17.15, PI / 2, 8, 7)
-	plane(M.carrelage, 6.3, 5.9, HX, -3.85, 17.15, PI / 2, 8, 7)
+	plane(M.carrelage, ZA - 14, 5.9, -HX, -3.85, (14 + ZA) / 2, PI / 2, 8, 7)
+	plane(M.carrelage, ZA - 14, 5.9, HX, -3.85, (14 + ZA) / 2, PI / 2, 8, 7)
 	plane(M.carrelage, 2 * HX, Vector2(6, 3.06).length(), 0, (-0.92 - 3.98) / 2, 17, 0, 3, 8, -PI / 2 + atan2(3.06, 6))
 	plane(M.sortieQ, 1.1, 0.28, 0, -1.25, 14.05, 0)
 	box(M.fonteDark, 1.12, 0.3, 0.01, 0, -1.25, 14.035)   # dos du panneau, vu du couloir
@@ -722,17 +722,18 @@ func _build_passage() -> void:
 	plane(to_nation, 1.5, 0.5, PX2 - 0.02, -9.1, ZA + PW / 2 + 1.0, -PI / 2)
 	plane(to_exit, 1.5, 1.0, PX2 - 0.02, -9.35, ZB - PW / 2 - 1.2, -PI / 2)
 
-	# plans de ligne sur les quais, examinables
-	for p in [["Porte Dauphine", Vector3(-21.7, -4.98, ZA + 0.03), 0.0], ["Nation", Vector3(-2.0, -4.98, ZB - 0.03), PI]]:
+	# plans de ligne à l'accès de chaque quai, examinables : direction Porte Dauphine dans le
+	# couloir avant l'escalier du quai, direction Nation dans le passage, au pied de son escalier
+	for p in [["Porte Dauphine", Vector3(-HX + 0.02, -1.78, 12.6), PI / 2], ["Nation", Vector3(PX1 + 0.02, -9.4, 30.4), PI / 2]]:
 		var terminus: String = p[0]
 		var pos: Vector3 = p[1]
 		var m := _sign_from_texture(Panneaux.line_plan(self, "Monceau", terminus))
-		plane(m, 0.9, 1.6, pos.x, pos.y, pos.z, p[2])
+		plane(m, 0.72, 1.28, pos.x, pos.y, pos.z, p[2])
 		var item := Examinable.new()
 		item.title = "Plan de la ligne 2"
 		item.description = Panneaux.line_plan_text("Monceau", terminus)
 		item.position = pos
-		_examinable_shape(item, Vector3(0.9, 1.6, 0.15))
+		_examinable_shape(item, Vector3(0.15, 1.28, 0.72))
 		add_child(item)
 
 

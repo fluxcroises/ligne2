@@ -114,15 +114,18 @@ func _build_body(M: Dictionary) -> void:
 			for sz in [-1, 1]:
 				_put(b, PsxGeo.plane(0.42, 2.2), M.soufflet, Vector3(cx + 7, fh + 1.1, sz * 1.0), Vector3(0, 0.0 if sz < 0 else PI, 0))
 				_put(b, PsxGeo.plane(0.42, 2.9), M.rameNoir, Vector3(cx + 7, 2.05, sz * 1.2), Vector3(0, PI if sz < 0 else 0.0, 0))
-			_put(b, PsxGeo.plane(0.42, 2.0), M.int_sol, Vector3(cx + 7, fh + 0.005, 0), Vector3(-PI / 2, 0, 0))
+			_put(b, PsxGeo.box(0.62, 0.012, 2.0), M.inox, Vector3(cx + 7, fh + 0.006, 0))   # plaque d'intercirculation
+			for edge in [-0.32, 0.32]:
+				_put(b, PsxGeo.box(0.03, 0.014, 2.0), M.rameNoir, Vector3(cx + 7 + edge, fh + 0.007, 0))
 			_put(b, PsxGeo.plane(0.42, 2.0), M.soufflet, Vector3(cx + 7, fh + 2.2, 0), Vector3(PI / 2, 0, 0))
 			_put(b, PsxGeo.plane(0.42, 2.4), M.rameNoir, Vector3(cx + 7, 3.45, 0), Vector3(-PI / 2, 0, 0))
 	for p in poles:
 		_put(b, PsxGeo.cylinder(0.025, 0.025, 2.1, 5), M.inox, p)
-	_put(b, PsxGeo.plane(2.4, 3.0), M.rameFace, Vector3(-HALF_LENGTH - 0.02, 2.05, 0), Vector3(0, -PI / 2, 0))
-	_put(b, PsxGeo.plane(2.4, 3.0), M.rameFace, Vector3(HALF_LENGTH + 0.02, 2.05, 0), Vector3(0, PI / 2, 0))
-	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(-HALF_LENGTH + 0.4, fh + 1.1, 0), Vector3(0, PI / 2, 0))
-	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(HALF_LENGTH - 0.4, fh + 1.1, 0), Vector3(0, -PI / 2, 0))
+	var nose := car_center(CARS - 1) + 6.8   # bout de la dernière caisse
+	_put(b, PsxGeo.plane(2.44, 3.0), M.rameFace, Vector3(-nose - 0.01, 2.05, 0), Vector3(0, -PI / 2, 0))
+	_put(b, PsxGeo.plane(2.44, 3.0), M.rameFace, Vector3(nose + 0.01, 2.05, 0), Vector3(0, PI / 2, 0))
+	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(-nose + 0.4, fh + 1.1, 0), Vector3(0, PI / 2, 0))
+	_put(b, PsxGeo.plane(2.3, 2.2), M.int_cabine, Vector3(nose - 0.4, fh + 1.1, 0), Vector3(0, -PI / 2, 0))
 	b.build(self)
 
 
