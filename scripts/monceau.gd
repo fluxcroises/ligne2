@@ -31,6 +31,14 @@ const TW := 1.2           # largeur d'un motif de carrelage
 const TH := 0.6           # hauteur d'un motif de carrelage
 const TUNNEL_LEN := 110.0
 
+# Passage sous les voies, entre les deux quais
+const PX0 := 9.0          # haut des escaliers, sur chaque quai
+const PX1 := 16.5         # bas des escaliers
+const PX2 := 18.9         # mur du fond du passage
+const PW := 1.6           # largeur des escaliers
+const PFLOOR := -10.5     # sol du passage
+const PCEIL := -8.2       # plafond du passage
+
 var M := {}
 var night := true
 var underground := false
@@ -38,10 +46,18 @@ var _builder := PsxBuilder.new()
 var _lanterns: Array[Vector3] = []
 var _under_lamps: Array[Vector3] = [Vector3(0, -1.1, 5.5), Vector3(0, -1.1, 9.5), Vector3(0, -1.1, 13.2), Vector3(0, -3.0, 17.2)]
 var _player: Node3D
+var _collisions: StaticBody3D
+var trafic: Trafic
 
 
 func _ready() -> void:
 	_make_materials()
+	var barriers := _build_colliders()
+	trafic = Trafic.new()
+	trafic.name = "Trafic"
+	add_child(trafic)
+	# [z de la voie, côté des portes, sens, décalage dans le cycle, destination]
+	trafic.setup(M, RY, PY - RY, [[25.5, -1, 1, 0.0, "Porte Dauphine"], [28.5, 1, -1, 47.0, "Nation"]], barriers)
 	_build_street()
 	_build_entrance()
 	_build_station()
@@ -51,9 +67,9 @@ func _ready() -> void:
 	_build_rotonde()
 	_build_buildings()
 	_build_trees()
+	_build_passage()
 	_build_clues()
 	_builder.build(self)
-	_build_colliders()
 	RenderingServer.global_shader_parameter_set("zone_color", Vector3(0.98, 0.97, 0.92))
 	RenderingServer.global_shader_parameter_set("zone_min", Vector3(-31.0, -1000.0, 19.6))
 	RenderingServer.global_shader_parameter_set("zone_max", Vector3(31.0, -0.3, 34.6))
@@ -77,8 +93,17 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Nom du lieu affiché en bas de l'écran.
 func place_name(pos: Vector3) -> String:
+	var train: MF01 = trafic.train_at(pos) if trafic else null
+	if train:
+		if trafic.is_moving(train):
+			return "Rame MF01 · prochaine station : Monceau"
+		return "Rame MF01 · direction %s" % train.destination
+	if pos.y < PFLOOR + 0.3:
+		return "Passage sous les voies · Monceau"
+	if pos.y < PY - 0.2 and pos.x > PX0 - 0.5:
+		return "Escalier · Monceau"
 	if pos.y < -6.3:
-		return "Quai · direction Porte Dauphine"
+		return "Quai · direction Nation" if pos.z > CZ else "Quai · direction Porte Dauphine"
 	if pos.y < -3.3:
 		return "Escalier · Monceau"
 	if pos.y < -2.6:
@@ -180,7 +205,17 @@ func _make_materials() -> void:
 		"sortieQ": _mat("sortie_quai"), "alarme": _mat("alarme"), "repere": _mat("repere"), "descente": _mat("descente"),
 		"seat": _mat("blanc", 0xec7a1c), "inox": _mat("blanc", 0xb4b8bc), "tunnel": _mat("pierre", 0x5e5c58),
 		"service": _mat("blanc", 0x3e4a45),
+		# rames MF01
+		"rameCote": _mat("rame_cote", 0xffffff, true), "rameFace": _mat("rame_face"),
+		"rameBlanc": _mat("blanc", 0xe6e4dc), "rameNoir": _mat("blanc", 0x1a1a1c),
+		"int_paroi": _mat("int_paroi", 0xffffff, true), "porte_ext": _mat("porte_ext", 0xffffff, true),
+		"porte_int": _mat("porte_int", 0xffffff, true), "int_sol": _mat("blanc", 0x55575c),
+		"int_plafond": _mat("blanc", 0xe8e2cc), "siege": _mat("siege"), "int_pied": _mat("blanc", 0xd8d0b4),
+		"soufflet": _mat("soufflet"), "int_plan": _mat("int_plan"), "int_cabine": _mat("blanc", 0xd6cfb6),
 	}
+	# l'intérieur des rames est éclairé par ses propres néons
+	for k in ["int_paroi", "porte_int", "int_sol", "int_plafond", "siege", "int_pied", "soufflet", "int_plan", "int_cabine"]:
+		M[k].set_shader_parameter("emission", Vector3(0.38, 0.37, 0.34))
 
 
 # --- Aides de construction (mêmes signatures que dans le prototype) -----------
@@ -278,9 +313,14 @@ func _build_entrance() -> void:
 # --- Quai, voûte, voies et tunnels --------------------------------------------
 
 func _build_station() -> void:
-	rect(M.sol, X0, ZA, X1, ZT0 - 0.55, PY, 2.4)
+	# sols des quais, percés par les escaliers du passage
+	rect(M.sol, X0, ZA, PX0, ZT0 - 0.55, PY, 2.4)
+	rect(M.sol, PX1, ZA, X1, ZT0 - 0.55, PY, 2.4)
+	rect(M.sol, PX0, ZA + PW, PX1, ZT0 - 0.55, PY, 2.4)
 	rect(M.bande, X0, ZT0 - 0.55, X1, ZT0, PY + 0.006, 0.55)
-	rect(M.sol, X0, ZT1 + 0.55, X1, ZB, PY, 2.4)
+	rect(M.sol, X0, ZT1 + 0.55, PX0, ZB, PY, 2.4)
+	rect(M.sol, PX1, ZT1 + 0.55, X1, ZB, PY, 2.4)
+	rect(M.sol, PX0, ZT1 + 0.55, PX1, ZB - PW, PY, 2.4)
 	rect(M.bande, X0, ZT1, X1, ZT1 + 0.55, PY + 0.006, 0.55)
 	rect(M.voie, X0, ZT0, X1, ZT1, RY, 1.2)
 	plane(M.quaiFace, L, PY - RY, 0, (PY + RY) / 2, ZT0, 0, 20, 1)
@@ -294,9 +334,11 @@ func _build_station() -> void:
 	var wc := (30 + HX) / 2
 	for sx in [-1, 1]:
 		plane(M.carreau, wl, WT - PY, sx * wc, (PY + WT) / 2, ZA, 0, wl / TW, (WT - PY) / TH)
-		plane(M.plinthe, wl, 0.2, sx * wc, PY + 0.1, ZA + 0.01, 0, wl / 0.6, 1)
 	plane(M.carreau, L, WT - PY, 0, (PY + WT) / 2, ZB, 0, L / TW, (WT - PY) / TH)
-	plane(M.plinthe, L, 0.2, 0, PY + 0.1, ZB - 0.01, 0, L / 0.6, 1)
+	# plinthes, interrompues au-dessus des escaliers du passage
+	for run in [[X0, -HX, ZA + 0.01], [HX, PX0, ZA + 0.01], [PX1, X1, ZA + 0.01], [X0, PX0, ZB - 0.01], [PX1, X1, ZB - 0.01]]:
+		var length: float = run[1] - run[0]
+		plane(M.plinthe, length, 0.2, (run[0] + run[1]) / 2, PY + 0.1, run[2], 0, length / 0.6, 1)
 
 	_build_vault()
 	for sx in [-1.0, 1.0]:
@@ -330,6 +372,16 @@ func _build_station() -> void:
 	box(M.inox, 0.03, 1.2, 0.03, -28.6, -2.6, 25.5)
 	plane(M.repere, 0.45, 0.45, 28.6, -3.4, 28.5, -PI / 2)
 	box(M.inox, 0.03, 1.2, 0.03, 28.6, -2.6, 28.5)
+
+	# écrans des prochains passages, un par quai
+	for screen in [[22.4, 0], [31.6, 1]]:
+		var z: float = screen[0]
+		var m: Material = trafic.siel_materials[screen[1]]
+		for x in [5, -17]:
+			for r in [PI / 2, -PI / 2]:
+				plane(m, 1.6, 0.6, x + (0.03 if r > 0 else -0.03), -3.5, z, r)
+			box(M.fonteDark, 0.04, 0.62, 1.62, x, -3.5, z)
+			box(M.inox, 0.03, 1.0, 0.03, x, -2.7, z)
 
 	# sièges « Motte » orange
 	var bowl := PsxGeo.sphere(0.24, 8, 3, 0, TAU, PI / 2, PI / 2)
@@ -549,6 +601,96 @@ func _build_trees() -> void:
 	add(PsxGeo.sphere(0.75, 8, 4, 0, TAU, 0, PI / 2), M.morris, MORRIS + Vector3(0, 3.2, 0), Vector3.ZERO, Vector3(1, 1.3, 1))
 
 
+# --- Passage sous les voies, vers le quai direction Nation --------------------
+# Chaque quai a un escalier le long de son mur ; il descend vers +x jusqu'à un passage
+# qui file sous les voies d'un quai à l'autre.
+
+const STEP := (PY - PFLOOR) / 15.0
+
+
+func _build_passage() -> void:
+	var to_nation := _sign_material("Direction", "Nation")
+	var to_exit := _sign_material("Sortie et direction", "Pte Dauphine")
+	for well in [[ZA, 1.0, to_nation], [ZB, -1.0, to_exit]]:
+		var zw: float = well[0]          # mur du quai
+		var inward: float = well[1]      # sens du mur vers les voies
+		var zc := zw + inward * PW / 2   # axe de l'escalier
+		var zi := zw + inward * PW       # bord de la trémie côté voies
+		for i in 15:
+			var top := PY - (i + 1) * STEP
+			box(M.pierreS, 0.5, top - PFLOOR + 0.3, PW, PX0 + i * 0.5 + 0.25, (top + PFLOOR - 0.3) / 2, zc, 1, 2)
+		var depth := PY - PFLOOR
+		plane(M.carrelage, PX1 - PX0, depth, (PX0 + PX1) / 2, (PY + PFLOOR) / 2, zw, 0, 10, 5.5)
+		plane(M.carrelage, PX1 - PX0, depth, (PX0 + PX1) / 2, (PY + PFLOOR) / 2, zi, 0, 10, 5.5)
+		plane(M.carrelage, PW, PY - PCEIL, PX1, (PY + PCEIL) / 2, zc, PI / 2, 2, 2.4)   # nez de la dalle
+		# garde-corps autour de la trémie
+		plane(M.gardecorps, PX1 - PX0, 1.0, (PX0 + PX1) / 2, PY + 0.5, zi, 0, PX1 - PX0, 1)
+		plane(M.gardecorps, PW, 1.0, PX1, PY + 0.5, zc, PI / 2, PW, 1)
+		box(M.fonte, PX1 - PX0, 0.05, 0.05, (PX0 + PX1) / 2, PY + 1.0, zi)
+		box(M.fonte, 0.05, 0.05, PW, PX1, PY + 1.0, zc)
+		# panneau suspendu au-dessus du haut de l'escalier, lisible des deux côtés
+		var sign_m: Material = well[2]
+		for r in [PI / 2, -PI / 2]:
+			plane(sign_m, 1.5, 0.5, PX0 - 0.4 + (0.03 if r > 0 else -0.03), -4.3, zc, r)
+		box(M.fonteDark, 0.04, 0.52, 1.52, PX0 - 0.4, -4.3, zc)
+		box(M.inox, 0.03, 1.4, 0.03, PX0 - 0.4, -3.35, zc)
+
+	# le passage
+	var h := PCEIL - PFLOOR
+	var yc := (PCEIL + PFLOOR) / 2
+	var mid := (ZA + ZB) / 2
+	rect(M.pierreS, PX1, ZA, PX2, ZB, PFLOOR, 1.2)
+	rect(M.carrelage, PX1, ZA, PX2, ZB, PCEIL, 0.8, PI / 2)
+	plane(M.carrelage, ZB - ZA, h, PX2, yc, mid, PI / 2, (ZB - ZA) / 0.77, h / 0.72)
+	plane(M.carrelage, ZB - ZA - 2 * PW, h, PX1, yc, mid, PI / 2, (ZB - ZA - 2 * PW) / 0.77, h / 0.72)
+	plane(M.carrelage, PX2 - PX1, h, (PX1 + PX2) / 2, yc, ZA, 0, 3, h / 0.72)
+	plane(M.carrelage, PX2 - PX1, h, (PX1 + PX2) / 2, yc, ZB, 0, 3, h / 0.72)
+	box(M.neon, 0.15, 0.05, ZB - ZA - 2, (PX1 + PX2) / 2, PCEIL - 0.03, mid)
+	# au pied de chaque escalier, un panneau sur le mur d'en face
+	plane(to_nation, 1.5, 0.5, PX2 - 0.02, -9.0, ZA + PW / 2 + 1.0, -PI / 2)
+	plane(to_exit, 1.5, 0.5, PX2 - 0.02, -9.0, ZB - PW / 2 - 1.0, -PI / 2)
+
+
+## Panneau bleu RATP dessiné à la volée (en attendant une photo) : pastille de la ligne 2,
+## une ligne de texte fine, une ligne en gras.
+func _sign_material(small: String, big: String) -> ShaderMaterial:
+	var vp := SubViewport.new()
+	vp.size = Vector2i(96, 32)
+	vp.disable_3d = true
+	vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	add_child(vp)
+	var bg := ColorRect.new()
+	bg.color = Color("#1b3a9a")
+	bg.size = Vector2(96, 32)
+	vp.add_child(bg)
+	var disc := Panel.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#ffffff")
+	style.set_corner_radius_all(7)
+	disc.add_theme_stylebox_override("panel", style)
+	disc.position = Vector2(4, 9)
+	disc.size = Vector2(14, 14)
+	vp.add_child(disc)
+	for line in [["2", Color("#1b3a9a"), 12, Vector2(4, 8), Vector2(14, 16)],
+			[small, Color("#dfe6ff"), 7, Vector2(22, 4), Vector2(72, 10)],
+			[big, Color.WHITE, 11, Vector2(22, 13), Vector2(72, 16)]]:
+		var l := Label.new()
+		l.text = line[0]
+		l.add_theme_color_override("font_color", line[1])
+		l.add_theme_font_size_override("font_size", line[2])
+		l.position = line[3]
+		l.size = line[4]
+		if line[0] == "2":
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		vp.add_child(l)
+	var m: ShaderMaterial = M.inox.duplicate()
+	m.set_shader_parameter("albedo_texture", vp.get_texture())
+	m.set_shader_parameter("albedo_color", Vector3.ONE)
+	m.set_shader_parameter("emission", Vector3(0.25, 0.25, 0.25))
+	return m
+
+
 # --- Indices du chapitre 1 (provisoires) --------------------------------------
 
 func _build_clues() -> void:
@@ -581,65 +723,107 @@ func _examinable_shape(item: Examinable, size: Vector3) -> void:
 
 # --- Collisions ---------------------------------------------------------------
 
-func _build_colliders() -> void:
-	var body := StaticBody3D.new()
-	body.name = "Collisions"
-	add_child(body)
-	var solid := func(size: Vector3, pos: Vector3, rot_x: float) -> void:
-		var shape := CollisionShape3D.new()
-		shape.shape = BoxShape3D.new()
-		shape.shape.size = size
-		shape.position = pos
-		shape.rotation.x = rot_x
-		body.add_child(shape)
-	var post := func(radius: float, height: float, pos: Vector3) -> void:
-		var shape := CollisionShape3D.new()
-		shape.shape = CylinderShape3D.new()
-		shape.shape.radius = radius
-		shape.shape.height = height
-		shape.position = pos + Vector3(0, height / 2, 0)
-		body.add_child(shape)
+## Ajoute une boîte de collision ; renvoie la forme (pour les garde-fous qu'on ôte).
+func _solid(size: Vector3, pos: Vector3, rot := Vector3.ZERO) -> CollisionShape3D:
+	var shape := CollisionShape3D.new()
+	shape.shape = BoxShape3D.new()
+	shape.shape.size = size
+	shape.position = pos
+	shape.rotation = rot
+	_collisions.add_child(shape)
+	return shape
+
+
+func _post(radius: float, height: float, pos: Vector3) -> void:
+	var shape := CollisionShape3D.new()
+	shape.shape = CylinderShape3D.new()
+	shape.shape.radius = radius
+	shape.shape.height = height
+	shape.position = pos + Vector3(0, height / 2, 0)
+	_collisions.add_child(shape)
+
+
+## Rampe invisible sous une volée de marches, du point haut au point bas (même largeur).
+func _ramp(top: Vector3, bottom: Vector3, width: float) -> void:
+	var d := bottom - top
+	var length := d.length()
+	if absf(d.x) > absf(d.z):
+		var angle := -atan2(-d.y, absf(d.x)) * signf(d.x)
+		var normal := Vector3(-sin(angle), cos(angle), 0)
+		_solid(Vector3(length, 0.2, width), (top + bottom) / 2 - normal * 0.1, Vector3(0, 0, angle))
+	else:
+		var angle := atan2(-d.y, absf(d.z)) * signf(d.z)
+		var normal := Vector3(0, cos(angle), sin(angle))
+		_solid(Vector3(width, 0.2, length), (top + bottom) / 2 - normal * 0.1, Vector3(angle, 0, 0))
+
+
+## Construit toutes les collisions ; renvoie les garde-fous des deux quais (voie 1, voie 2).
+func _build_colliders() -> Array[CollisionShape3D]:
+	_collisions = StaticBody3D.new()
+	_collisions.name = "Collisions"
+	add_child(_collisions)
 
 	# Sol de la rue, percé par la trémie.
-	solid.call(Vector3(2 * W, 0.9, W + Z0), Vector3(0, -0.45, (-W + Z0) / 2), 0.0)
-	solid.call(Vector3(2 * W, 0.9, W - Z1), Vector3(0, -0.45, (W + Z1) / 2), 0.0)
+	_solid(Vector3(2 * W, 0.9, W + Z0), Vector3(0, -0.45, (-W + Z0) / 2))
+	_solid(Vector3(2 * W, 0.9, W - Z1), Vector3(0, -0.45, (W + Z1) / 2))
 	for sx in [-1, 1]:
-		solid.call(Vector3(W - HX, 0.9, Z1 - Z0), Vector3(sx * (W + HX) / 2, -0.45, 0), 0.0)
+		_solid(Vector3(W - HX, 0.9, Z1 - Z0), Vector3(sx * (W + HX) / 2, -0.45, 0))
 		# balustrade et parapet de la trémie
-		solid.call(Vector3(0.36, 1.5, 6.36), Vector3(sx * 1.3, 0.75, 0), 0.0)
-	solid.call(Vector3(2.96, 1.5, 0.36), Vector3(0, 0.75, 3.0), 0.0)
+		_solid(Vector3(0.36, 1.5, 6.36), Vector3(sx * 1.3, 0.75, 0))
+	_solid(Vector3(2.96, 1.5, 0.36), Vector3(0, 0.75, 3.0))
 
-	# Escaliers : une rampe invisible sous chaque volée de marches.
-	for flight in [[Z0, 0.0], [14.0, -3.24]]:
-		var z_top: float = flight[0]
-		var y_top: float = flight[1]
-		var angle := atan2(3.24, 6.0)
-		var normal := Vector3(0, cos(angle), sin(angle))
-		var center := Vector3(0, y_top - 1.62, z_top + 3.0) - normal * 0.1
-		solid.call(Vector3(2 * HX, 0.2, Vector2(6, 3.24).length()), center, angle)
-	# couloir entre les deux escaliers
-	solid.call(Vector3(2 * HX, 0.2, 14 - Z1), Vector3(0, -3.34, (Z1 + 14) / 2), 0.0)
+	# Escaliers d'accès et couloir.
+	_ramp(Vector3(0, 0, Z0), Vector3(0, -3.24, Z1), 2 * HX)
+	_ramp(Vector3(0, -3.24, 14), Vector3(0, PY, ZA), 2 * HX)
+	_solid(Vector3(2 * HX, 0.2, 14 - Z1), Vector3(0, -3.34, (Z1 + 14) / 2))
 	for sx in [-1, 1]:
-		solid.call(Vector3(0.2, 3.6, 17), Vector3(sx * (HX + 0.1), -1.8, 5.5), 0.0)
-		solid.call(Vector3(0.2, 5.9, 6.3), Vector3(sx * (HX + 0.1), -3.85, 17.15), 0.0)
+		_solid(Vector3(0.2, 3.6, 17), Vector3(sx * (HX + 0.1), -1.8, 5.5))
+		_solid(Vector3(0.2, 5.9, 6.3), Vector3(sx * (HX + 0.1), -3.85, 17.15))
 
-	# Quai A (direction Porte Dauphine), seul quai accessible pour l'instant.
-	solid.call(Vector3(L, 0.2, ZT0 - ZA), Vector3(0, PY - 0.1, (ZA + ZT0) / 2), 0.0)
-	for sx in [-1, 1]:
-		solid.call(Vector3(30 - HX, WT - PY, 0.2), Vector3(sx * (30 + HX) / 2, (PY + WT) / 2, ZA - 0.1), 0.0)
-		solid.call(Vector3(0.2, 4, ZT0 - ZA), Vector3(sx * 30.1, PY + 2, (ZA + ZT0) / 2), 0.0)
-	# Garde-fou provisoire au bord du quai, en attendant les rames.
-	solid.call(Vector3(L, 2.0, 0.1), Vector3(0, PY + 1.0, ZT0 - 0.3), 0.0)
+	# Les deux quais, percés par les escaliers du passage.
+	var barriers: Array[CollisionShape3D] = []
+	for quai in [[ZA, ZT0, 1.0], [ZB, ZT1, -1.0]]:
+		var zw: float = quai[0]       # mur du quai
+		var ze: float = quai[1]       # bord du quai
+		var inward: float = quai[2]   # sens du mur vers les voies
+		var zi := zw + inward * PW
+		var depth := absf(ze - zw)
+		_solid(Vector3(PX0 - X0, 0.2, depth), Vector3((X0 + PX0) / 2, PY - 0.1, (zw + ze) / 2))
+		_solid(Vector3(X1 - PX1, 0.2, depth), Vector3((PX1 + X1) / 2, PY - 0.1, (zw + ze) / 2))
+		_solid(Vector3(PX1 - PX0, 0.2, absf(ze - zi)), Vector3((PX0 + PX1) / 2, PY - 0.1, (zi + ze) / 2))
+		if zw == ZA:
+			# le mur du quai A est percé par l'escalier qui descend du couloir
+			for sx in [-1, 1]:
+				_solid(Vector3(30 - HX, WT - PFLOOR, 0.2), Vector3(sx * (30 + HX) / 2, (PFLOOR + WT) / 2, zw - 0.1))
+		else:
+			_solid(Vector3(L, WT - PFLOOR, 0.2), Vector3(0, (PFLOOR + WT) / 2, zw + 0.1))
+		for sx in [-1, 1]:
+			_solid(Vector3(0.2, 4, depth), Vector3(sx * 30.1, PY + 2, (zw + ze) / 2))
+			# bouts de quai au-delà des rames : garde-fou permanent
+			_solid(Vector3(2.4, 2.0, 0.1), Vector3(sx * 28.9, PY + 1.0, ze - inward * 0.3))
+		# garde-fou le long des voies, ôté quand la rame est à quai
+		barriers.append(_solid(Vector3(56.0, 2.0, 0.1), Vector3(0, PY + 1.0, ze - inward * 0.3)))
+		# trémie de l'escalier : garde-corps, mur côté voies, rampe
+		_solid(Vector3(PX1 - PX0, 1.1, 0.06), Vector3((PX0 + PX1) / 2, PY + 0.55, zi))
+		_solid(Vector3(0.06, 1.1, PW), Vector3(PX1, PY + 0.55, zw + inward * PW / 2))
+		_solid(Vector3(PX1 - PX0, PY - PFLOOR, 0.2), Vector3((PX0 + PX1) / 2, (PY + PFLOOR) / 2, zi + inward * 0.1))
+		_ramp(Vector3(PX0, PY, zw + inward * PW / 2), Vector3(PX1, PFLOOR, zw + inward * PW / 2), PW)
+
+	# Passage sous les voies.
+	_solid(Vector3(PX2 - PX1, 0.2, ZB - ZA), Vector3((PX1 + PX2) / 2, PFLOOR - 0.1, (ZA + ZB) / 2))
+	_solid(Vector3(0.2, PCEIL - PFLOOR, ZB - ZA), Vector3(PX2 + 0.1, (PFLOOR + PCEIL) / 2, (ZA + ZB) / 2))
+	_solid(Vector3(0.2, PCEIL - PFLOOR, ZB - ZA - 2 * PW), Vector3(PX1 - 0.1, (PFLOOR + PCEIL) / 2, (ZA + ZB) / 2))
 
 	# Rue : façades, Rotonde, grilles du parc, mobilier.
-	solid.call(Vector3(0.4, 6, 2 * W), Vector3(-26.2, 3, 0), 0.0)
-	solid.call(Vector3(0.4, 6, 2 * W), Vector3(22.4, 3, 0), 0.0)
-	solid.call(Vector3(2 * W, 6, 0.4), Vector3(0, 3, -24.4), 0.0)
-	solid.call(Vector3(2 * W, 6, 0.4), Vector3(0, 3, 24.4), 0.0)
-	post.call(6.6, 10.0, ROT)
-	solid.call(Vector3(1.2, 5, 5.2), Vector3(ROT.x, 2.5, -3.2), 0.0)
-	solid.call(Vector3(1.2, 5, 5.2), Vector3(ROT.x, 2.5, 13.6), 0.0)
+	_solid(Vector3(0.4, 6, 2 * W), Vector3(-26.2, 3, 0))
+	_solid(Vector3(0.4, 6, 2 * W), Vector3(22.4, 3, 0))
+	_solid(Vector3(2 * W, 6, 0.4), Vector3(0, 3, -24.4))
+	_solid(Vector3(2 * W, 6, 0.4), Vector3(0, 3, 24.4))
+	_post(6.6, 10.0, ROT)
+	_solid(Vector3(1.2, 5, 5.2), Vector3(ROT.x, 2.5, -3.2))
+	_solid(Vector3(1.2, 5, 5.2), Vector3(ROT.x, 2.5, 13.6))
 	for t in TREES:
-		post.call(0.35, 3.0, Vector3(t[0], 0, t[1]))
-	post.call(0.65, 3.0, MORRIS)
-	post.call(0.25, 3.0, Vector3(4.6, 0, -5.2))
+		_post(0.35, 3.0, Vector3(t[0], 0, t[1]))
+	_post(0.65, 3.0, MORRIS)
+	_post(0.25, 3.0, Vector3(4.6, 0, -5.2))
+	return barriers

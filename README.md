@@ -23,7 +23,7 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 
 ## Où en est-on
 
-Étapes 1 et 2 du document de conception :
+Étapes 1 à 3 du document de conception :
 
 - rendu 320 × 240 agrandi sans lissage, couleurs 15 bits avec tramage ;
 - matériau PSX repris du prototype : sommets accrochés à la grille de l'écran, éclairage par
@@ -31,13 +31,20 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 - Monceau reconstruit d'après le prototype navigateur, aux mêmes cotes : boulevard de Courcelles,
   bouche Guimard, totem, candélabre, Rotonde et grilles du parc, immeubles, deux escaliers,
   couloir, quai, voûte, deux voies, tunnels, avec les 49 textures tirées des photos ;
-- vraies collisions (rampes invisibles sous les marches) ;
+- les deux quais sont accessibles : un passage sous les voies relie le quai direction
+  Porte Dauphine au quai direction Nation (escalier le long du mur de chaque quai) ;
+- rames MF01 sur les deux voies, une toutes les 94 s : arrivée, ouverture des portes, bip de
+  fermeture, départ ; on peut monter à bord et la rame emmène le joueur (pour l'instant elle
+  revient à Monceau, en attendant les autres stations) ;
+- écrans des prochains passages sur chaque quai, avec l'heure de jeu (départ à 23 h 05) ;
+- grondement des rames et bip des portes, fabriqués par le jeu au lancement ;
+- vraies collisions (rampes invisibles sous les marches, garde-fous de quai ôtés quand une
+  rame est à quai, portes qui laissent passer une fois ouvertes) ;
 - joueur en vue subjective, visée d'objets et fenêtre d'examen ; deux indices provisoires
   (badge de Karim sous un siège, porte de service rayée au bout du quai).
 
-Pas encore repris du prototype : les rames MF01, l'écran des prochains passages et le son (étape 3).
-Seul le quai direction Porte Dauphine est accessible, comme dans le prototype ; un garde-fou
-invisible longe le bord du quai en attendant les rames.
+Les panneaux « Direction Nation » et « Sortie et direction Pte Dauphine » du passage sont dessinés
+par le jeu en attendant une photo.
 
 ## Organisation
 
@@ -45,6 +52,8 @@ invisible longe le bord du quai en attendant les rames.
 | --- | --- |
 | `scenes/` | `main.tscn` (Monceau), `player.tscn` |
 | `scripts/monceau.gd` | construction du lieu, collisions, jour / nuit, noms des lieux |
+| `scripts/mf01.gd` | une rame MF01 : caisse, intérieur, portes, collisions |
+| `scripts/trafic.gd` | cycle des passages, montée à bord, écrans des prochains passages, sons |
 | `scripts/psx_geo.gd`, `psx_builder.gd` | primitives à la manière de three.js, fusion par matériau |
 | `scripts/` (autres) | joueur, contrôles, interface, objets à examiner |
 | `shaders/` | `psx.gdshader` (matériau), `psx_post.gdshader` (15 bits + tramage) |
