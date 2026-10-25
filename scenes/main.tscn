@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/monceau.gd" id="1_station"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
@@ -6,6 +6,7 @@
 [ext_resource type="Shader" path="res://shaders/psx_post.gdshader" id="4_post"]
 [ext_resource type="Script" path="res://scripts/telephone.gd" id="5_phone"]
 [ext_resource type="Script" path="res://scripts/dialogue.gd" id="6_dialogue"]
+[ext_resource type="Script" path="res://scripts/pause.gd" id="7_pause"]
 
 [sub_resource type="Environment" id="Environment_monceau"]
 background_mode = 1
@@ -46,3 +47,6 @@ script = ExtResource("5_phone")
 
 [node name="Dialogue" type="CanvasLayer" parent="."]
 script = ExtResource("6_dialogue")
+
+[node name="Pause" type="CanvasLayer" parent="."]
+script = ExtResource("7_pause")

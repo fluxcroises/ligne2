@@ -25,12 +25,124 @@ var flags := {}
 var in_dialogue := false
 ## Messages d'aide de Nadia quand on tourne en rond.
 var hints_enabled := true
+var hints_sent: Array[String] = []
 var _outbox: Array[Dictionary] = []      # messages en attente de réseau
+
+## Vrai une fois une partie commencée ou chargée.
+var started := false
+## Position du détective et heure de jeu à rétablir au chargement (appliquées par le chapitre).
+var pending_load := {}
+
+const SAVE_PATH := "user://sauvegarde.json"
+const PHOTO_DIR := "user://photos"
 
 
 func _ready() -> void:
+	evidence_added.connect(func(_e: Dictionary) -> void: _autosave.call_deferred())
+	deduction_solved.connect(func(_d: String) -> void: _autosave.call_deferred())
+
+
+func reset() -> void:
+	chapter = 1
+	battery = 100.0
+	underground = false
+	unlocked_stations = ["Monceau"]
+	evidence.clear()
+	photos.clear()
+	messages.clear()
+	solved.clear()
+	flags.clear()
+	hints_sent.clear()
+	_outbox.clear()
+	in_dialogue = false
+	pending_load = {}
+
+
+## Nouvelle partie : prologue du chapitre 1 (les messages de Nadia).
+func new_game() -> void:
+	reset()
+	started = true
+	_loading = true
 	for m in Chapitre1.PROLOGUE:
 		send_to_player(m.from, m.text, m.get("evidence", ""))
+	_loading = false
+
+
+# --- Sauvegarde ----------------------------------------------------------------
+# Automatique à chaque nouvelle pièce du dossier et à chaque déduction (et en quittant).
+
+var _loading := false
+
+
+func has_save() -> bool:
+	return FileAccess.file_exists(SAVE_PATH)
+
+
+func _autosave() -> void:
+	if started and not _loading and get_tree().current_scene and get_tree().current_scene.has_node("Monceau"):
+		save_game()
+
+
+func save_game() -> void:
+	DirAccess.make_dir_recursive_absolute(PHOTO_DIR)
+	var items := []
+	for e in evidence:
+		var image := ""
+		var tex: Texture2D = e.texture
+		if tex and tex.resource_path != "":
+			image = tex.resource_path
+		elif tex:
+			image = "%s/%s.png" % [PHOTO_DIR, e.id]
+			tex.get_image().save_png(image)
+		items.append({"id": e.id, "image": image})
+	var data := {
+		"version": 1, "chapter": chapter, "battery": battery, "unlocked": unlocked_stations,
+		"flags": flags, "solved": solved, "hints_sent": hints_sent, "evidence": items,
+		"messages": messages, "outbox": _outbox,
+	}
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	if player:
+		var p := player.global_position
+		data.player = [p.x, p.y, p.z, player.rotation.y]
+	var trafic := _trafic()
+	if trafic:
+		data.time = trafic.time
+	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	f.store_string(JSON.stringify(data, "\t"))
+
+
+## Charge la sauvegarde ; la position et l'heure sont appliquées une fois Monceau chargée.
+func load_game() -> bool:
+	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if not f:
+		return false
+	var data: Variant = JSON.parse_string(f.get_as_text())
+	if not data is Dictionary:
+		return false
+	reset()
+	_loading = true
+	chapter = int(data.get("chapter", 1))
+	battery = float(data.get("battery", 100.0))
+	unlocked_stations.assign(data.get("unlocked", ["Monceau"]))
+	flags = data.get("flags", {})
+	solved.assign(data.get("solved", []))
+	hints_sent.assign(data.get("hints_sent", []))
+	for item in data.get("evidence", []):
+		var tex: Texture2D = null
+		var path: String = item.get("image", "")
+		if path.begins_with("res://"):
+			tex = load(path)
+		elif path != "" and FileAccess.file_exists(path):
+			tex = ImageTexture.create_from_image(Image.load_from_file(path))
+		add_evidence(item.id, tex)
+	for m in data.get("messages", []):
+		messages.append(m)
+	for m in data.get("outbox", []):
+		_outbox.append(m)
+	pending_load = {"player": data.get("player", []), "time": data.get("time", 0.0)}
+	_loading = false
+	started = true
+	return true
 
 
 func _process(_delta: float) -> void:

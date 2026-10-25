@@ -328,6 +328,7 @@ func _take_photo() -> void:
 		close()
 		return
 	var target := _photo_target()
+	Sons.play("declic")
 	_viewfinder.hide()
 	_toast.hide()
 	await RenderingServer.frame_post_draw
@@ -463,6 +464,7 @@ func _build_toast() -> void:
 
 
 func _on_message(m: Dictionary) -> void:
+	Sons.play("vibreur", -12.0)
 	if is_open:
 		_refresh()
 	else:

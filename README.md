@@ -21,11 +21,11 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 | Dans le téléphone | flèches, Entrée, Échap (retour), souris | croix, A, B |
 | Photographier (appareil photo) | E ou clic gauche | A / Croix |
 | Jour / nuit | N | Select |
-| Libérer la souris | Échap | Start |
+| Pause (reprendre, réglages, sauvegarder, quitter) | Échap | Start |
 
 ## Où en est-on
 
-Étapes 1 à 6 du document de conception :
+Les sept étapes du document de conception :
 
 - rendu 320 × 240 agrandi sans lissage, couleurs 15 bits avec tramage ;
 - matériau PSX repris du prototype : sommets accrochés à la grille de l'écran, éclairage par
@@ -68,6 +68,14 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
   messages d'aide de Nadia après 10 min sans avancer ; fin du chapitre en montant dans la rame
   direction Nation après les aveux de Sylvain (« Prochaine station : Villiers »).
 
+- écran titre (Continuer, Nouvelle partie, Réglages, Quitter), menu pause, réglages enregistrés
+  (sensibilité, axe vertical inversé, volume, aides de Nadia, tremblement des polygones, plein écran) ;
+- sauvegarde automatique à chaque nouvelle pièce du dossier et à chaque déduction, et en quittant
+  (fichier `sauvegarde.json` dans le dossier utilisateur de Godot ; sous Windows :
+  `%APPDATA%\Godot\app_userdata\Ligne 2\`) ;
+- sons fabriqués par le jeu : ambiance de la rue et de la station, pas, rames, portes, déclic de
+  l'appareil photo, vibreur.
+
 Déroulé du chapitre 1 : photo de Karim (Nadia) → badge sous un siège et serrure rayée au bout du
 quai (photos) → photo du voyageur (Recherche, à la surface) → cahier de la loge (photo, pendant une
 ronde) → Jo parle à la vue de la photo du voyageur → déduction dans le téléphone → aveux de
@@ -85,6 +93,19 @@ service métallique au bout du quai. Liste des stations : plan de ligne RATP (11
 
 Crédits des photos et données utilisées : voir `CREDITS.md`.
 
+## Export Windows
+
+Préréglage « Windows Desktop » fourni (`export_presets.cfg`) : dans Godot, **Projet → Exporter →
+Windows Desktop → Exporter le projet** (installer les modèles d'exportation 4.3 la première fois).
+En ligne de commande : `godot --headless --export-release "Windows Desktop" export/Ligne2.exe`.
+Le `.exe` contient tout le jeu (environ 85 Mo).
+
+## Tests
+
+`tests/` contient des scénarios qui jouent une partie en simulant les touches (parcours de la rue
+au quai et dans la rame, téléphone, dialogues, chapitre 1 complet, menus et sauvegarde) :
+`GODOT=/chemin/vers/godot tests/lancer.sh` (Linux, avec xvfb).
+
 ## Organisation
 
 | Dossier | Contenu |
@@ -98,6 +119,8 @@ Crédits des photos et données utilisées : voir `CREDITS.md`.
 | `scripts/chapitre_1_jeu.gd` | déroulé du chapitre 1 : horaires, aides de Nadia, fin du chapitre |
 | `scripts/dialogue.gd`, `personnage.gd` | boîte de dialogue ; personnages low-poly |
 | `scripts/ui_theme.gd` | style commun des interfaces |
+| `scripts/titre.gd`, `pause.gd`, `panneau_reglages.gd` | écran titre, menu pause, réglages |
+| `scripts/reglages.gd`, `sons.gd` | réglages enregistrés, sons (autoloads `Reglages`, `Sons`) |
 | `scripts/panneaux.gd` | panneaux RATP dessinés par le jeu, liste des stations de la ligne 2 |
 | `scripts/trafic.gd` | cycle des passages, montée à bord, écrans des prochains passages, sons |
 | `scripts/psx_geo.gd`, `psx_builder.gd` | primitives à la manière de three.js, fusion par matériau |

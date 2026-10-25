@@ -12,13 +12,15 @@ config_version=5
 
 config/name="Ligne 2"
 config/description="Polar en vue subjective, style PS1, sur la ligne 2 du métro parisien."
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/titre.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 
 [autoload]
 
 InputSetup="*res://scripts/input_setup.gd"
 Enquete="*res://scripts/enquete.gd"
+Reglages="*res://scripts/reglages.gd"
+Sons="*res://scripts/sons.gd"
 
 [display]
 

@@ -61,6 +61,9 @@ var trafic: Trafic
 
 
 func _ready() -> void:
+	if not Enquete.started:   # lancé directement depuis l'éditeur, sans passer par le titre
+		Enquete.new_game()
+	Sons.playing = true
 	_make_materials()
 	var barriers := _build_colliders()
 	trafic = Trafic.new()

@@ -8,13 +8,28 @@ var _ronde := false
 var _kiosk_open := true
 var _idle := 0.0
 var _progress := -1
-var _hints_sent: Array[String] = []
 var _ended := false
 var _end_screen: CanvasLayer
 
 
 func _ready() -> void:
 	_station = get_parent()
+	_ended = Enquete.flags.get("chapitre_1_fini", false)
+	_restore.call_deferred()
+
+
+## Après un chargement : remettre le détective à sa place et l'horloge à l'heure.
+func _restore() -> void:
+	var data := Enquete.pending_load
+	Enquete.pending_load = {}
+	var player := get_tree().get_first_node_in_group("player") as Node3D
+	if data.is_empty() or not player:
+		return
+	_station.trafic.time = float(data.get("time", 0.0))
+	var p: Array = data.get("player", [])
+	if p.size() == 4:
+		player.global_position = Vector3(p[0], p[1], p[2])
+		player.rotation.y = p[3]
 
 
 func _process(delta: float) -> void:
@@ -65,8 +80,8 @@ func _hints(delta: float) -> void:
 		return
 	_idle = 0.0
 	for hint in Chapitre1.HINTS:
-		if Enquete.check(hint[0]) and not _hints_sent.has(hint[1]):
-			_hints_sent.append(hint[1])
+		if Enquete.check(hint[0]) and not Enquete.hints_sent.has(hint[1]):
+			Enquete.hints_sent.append(hint[1])
 			Enquete.send_to_player("Nadia", hint[1])
 			return
 

@@ -34,9 +34,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	var captured := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 	if event is InputEventMouseMotion and captured:
-		_look(-event.relative.x * mouse_sensitivity, -event.relative.y * mouse_sensitivity)
-	elif event.is_action_pressed("pause"):
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED
+		var k := mouse_sensitivity * Reglages.mouse_sensitivity
+		_look(-event.relative.x * k, -event.relative.y * k * (-1.0 if Reglages.invert_y else 1.0))
 	elif event is InputEventMouseButton and event.pressed and not captured:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		get_viewport().set_input_as_handled()
@@ -52,7 +51,8 @@ func _look(yaw: float, pitch: float) -> void:
 func _physics_process(delta: float) -> void:
 	var stick := Input.get_vector("look_left", "look_right", "look_up", "look_down")
 	if stick != Vector2.ZERO and not input_locked:
-		_look(-stick.x * pad_look_speed * delta, -stick.y * pad_look_speed * delta)
+		var k := pad_look_speed * delta * Reglages.mouse_sensitivity
+		_look(-stick.x * k, -stick.y * k * (-1.0 if Reglages.invert_y else 1.0))
 
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
@@ -72,7 +72,10 @@ func _physics_process(delta: float) -> void:
 func _update_bob(delta: float) -> void:
 	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
 	if is_on_floor() and horizontal_speed > 0.1:
+		var before := floorf(_bob_time / PI)
 		_bob_time += delta * horizontal_speed * 4.0
+		if floorf(_bob_time / PI) != before:
+			Sons.pas()   # un pas à chaque creux du balancement
 	else:
 		_bob_time = lerpf(_bob_time, roundf(_bob_time / PI) * PI, delta * 8.0)
 	head.position.y = _head_height + absf(sin(_bob_time)) * bob_amount
