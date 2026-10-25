@@ -214,7 +214,7 @@ func _make_materials() -> void:
 	M = {
 		"paves": _mat("paves"), "trottoir": _mat("trottoir"), "pierre": _mat("pierre_taille"), "pierreS": _mat("pierre"),
 		"carrelage": _mat("carreau_blanc"), "balus": _mat("balustrade", 0xffffff, true), "enseigne": _mat("enseigne", 0xffffff, true),
-		"plaque": _mat("plaque"), "plan": _mat("plan"), "globes": _mat("globes"), "lanterne": _mat("lanterne"),
+		"plaque": _mat("plaque", 0xffffff, true), "plan": _mat("plan_quartier"), "plan_reseau": _mat("plan_reseau"), "globes": _mat("globes"), "lanterne": _mat("lanterne"),
 		"fonte": _mat("blanc", 0x24443a), "fonteDark": _mat("blanc", 0x172a23),
 		"facA": _mat("facade_a"), "facB": _mat("facade_b"), "porte": _mat("porte"), "zinc": _mat("zinc"),
 		"corn": _mat("rot_corniche"), "tamb": _mat("rot_tambour"), "dome": _mat("dome"), "grille": _mat("grille"),
@@ -353,7 +353,7 @@ func _build_entrance() -> void:
 	plane(M.carrelage, 2 * HX, Vector2(6, 3.06).length(), 0, (-0.92 - 3.98) / 2, 17, 0, 3, 8, -PI / 2 + atan2(3.06, 6))
 	plane(M.sortieQ, 1.1, 0.28, 0, -1.25, 14.05, 0)
 	box(M.fonteDark, 1.12, 0.3, 0.01, 0, -1.25, 14.035)   # dos du panneau, vu du couloir
-	plane(M.plaque, 1.4, 0.36, -HX + 0.02, -1.6, 8, PI / 2)
+	plane(M.plaque, 1.4, 0.35, 1.96, -1.5, Z1 + 0.02, 0)   # au mur de la salle, à l'arrivée de l'escalier
 
 
 # --- Quai, voûte, voies et tunnels --------------------------------------------
@@ -405,7 +405,7 @@ func _build_station() -> void:
 	plane(M.direction, 0.9, 1.2, -3.2, -5.05, ZA + 0.03, 0)
 	for x in [-24, 8]:
 		box(M.inox, 1.5, 1.5, 0.05, x, -5.05, ZA + 0.03)
-		plane(M.plan, 1.38, 1.38, x, -5.05, ZA + 0.06, 0)
+		plane(M.plan_reseau, 1.38, 1.38, x, -5.05, ZA + 0.06, 0)
 	for r in [PI / 2, -PI / 2]:
 		var o := 0.02 if r > 0 else -0.02
 		plane(M.sortieQ, 1.2, 0.3, o, -3.3, 22.2, r)

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cl21at1v5sgud"
-path="res://.godot/imported/plan.png-6ff84265b665b16f0fd62535b30997dc.ctex"
+uid="uid://cl7fkjwvv8ewu"
+path="res://.godot/imported/plan_quartier.png-eac1574e99f933b8390b8664f001d245.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://textures/plan.png"
-dest_files=["res://.godot/imported/plan.png-6ff84265b665b16f0fd62535b30997dc.ctex"]
+source_file="res://textures/plan_quartier.png"
+dest_files=["res://.godot/imported/plan_quartier.png-eac1574e99f933b8390b8664f001d245.ctex"]
 
 [params]
 

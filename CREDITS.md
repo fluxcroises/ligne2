@@ -20,9 +20,14 @@ On en a repris la disposition, les proportions et les couleurs. Aucune texture n
   (illustration) ; redessinés dans `carreau_blanc.png`, `carreau_marron.png` et
   `Panneaux.mf01_front()`, sans reprise des images.
 
+- Plan de quartier et plan du réseau RATP (© RATP, tous droits réservés), plaque émaillée
+  « Monceau » (photo de produit) : modèles pour `plan_quartier.png`, `plan_reseau.png` et le
+  cadre de `plaque.png`, redessinés sans reprise des images.
+
 ### Photos de Lewis
 
 Les textures de `textures/` issues de `textures_monceau_ps1.zip` ont été tirées des photos de Lewis.
+Le lettrage de `plaque.png` a été extrait de sa photo de l'enseigne de Monceau (redressée et nettoyée).
 
 ## Données
 
