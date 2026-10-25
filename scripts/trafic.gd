@@ -125,18 +125,25 @@ func _physics_process(delta: float) -> void:
 	if int(time) != _last_second:
 		_last_second = int(time)
 		for i in trains.size():
-			_update_siel(_siel[i], trains[i])
+			_update_siel(i)
 
 
-# --- Écran des prochains passages (SIEL) --------------------------------------
-# Mise en page des écrans actuels de la RATP : bandeau blanc (Ⓜ, ②, terminus en bleu nuit,
-# horloge jaune sur fond noir), puis les deux prochains passages en grands chiffres jaunes.
-# Le premier chiffre s'assombrit quand la rame est à quai (0 minute).
+# --- Écrans des prochains passages (PANAM) ------------------------------------
+# Mise en page des écrans PANAM de la RATP : bandeau blanc (Ⓜ, ②, terminus en bleu nuit),
+# prochains passages en grands chiffres jaunes sur fond noir, encart blanc d'info trafic
+# avec l'horloge, bande bleue de la ligne 2 en bas. Le premier chiffre s'assombrit quand
+# la rame est à quai. Le texte de l'encart est illisible de loin : on peut examiner l'écran.
 
 const SIEL_SIZE := Vector2i(128, 61)
 const SIEL_YELLOW := Color("#ffbf00")
 const SIEL_YELLOW_DIM := Color("#7a5a00")
 const SIEL_NAVY := Color("#0b0a86")
+const LINE_2_BLUE := Color("#0055c8")
+
+## Message de l'encart d'info trafic ; l'histoire pourra le changer.
+var info_message := "Trafic normal sur l'ensemble de la ligne."
+## Écrans examinables, par voie (remplis par le lieu qui place les écrans).
+var siel_examinables := [[], []]
 
 
 func _make_siel(destination: String) -> Dictionary:
@@ -149,31 +156,54 @@ func _make_siel(destination: String) -> Dictionary:
 	bold.base_font = ThemeDB.fallback_font
 	bold.variation_embolden = 0.9
 	_rect(vp, Color.BLACK, Rect2(0, 0, 128, 61))
-	_rect(vp, Color.WHITE, Rect2(0, 0, 128, 13))
-	_disc(vp, Color.WHITE, Color("#263040"), Vector2(7, 6.5), "M")
-	_disc(vp, Color("#0055c8"), Color.TRANSPARENT, Vector2(18, 6.5), "2")
-	_text(vp, destination, SIEL_NAVY, 10, Vector2(26, -1), bold)
-	_rect(vp, Color.BLACK, Rect2(107, 0, 21, 9))
-	var clock := _text(vp, "23:05", SIEL_YELLOW, 7, Vector2(109, -0.5))
-	_text(vp, "1er métro", Color.WHITE, 6, Vector2(3, 19))
-	_text(vp, "2e métro", Color.WHITE, 6, Vector2(34, 19))
-	_rect(vp, Color.WHITE, Rect2(31, 31, 1, 17))
-	var first := _text(vp, "0", SIEL_YELLOW, 20, Vector2(4, 26), bold)
-	var second := _text(vp, "3", SIEL_YELLOW, 20, Vector2(36, 26), bold)
+	# bandeau
+	_rect(vp, Color.WHITE, Rect2(0, 0, 128, 16))
+	_disc(vp, Color.WHITE, Color("#263040"), Vector2(9, 8), "M")
+	_disc(vp, LINE_2_BLUE, Color.TRANSPARENT, Vector2(21, 8), "2")
+	_text(vp, destination, SIEL_NAVY, 11, Vector2(32, 0), bold)
+	# prochains passages
+	_text(vp, "1er métro", Color.WHITE, 5, Vector2(3, 18))
+	_text(vp, "2e métro", Color.WHITE, 5, Vector2(34, 18))
+	_rect(vp, Color.WHITE, Rect2(32, 30, 1, 16))
+	var first := _text(vp, "0", SIEL_YELLOW, 20, Vector2(6, 25), bold)
+	var second := _text(vp, "3", SIEL_YELLOW, 20, Vector2(37, 25), bold)
 	for l in [first, second]:
 		l.size = Vector2(22, 24)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	return {"viewport": vp, "first": first, "second": second, "clock": clock}
+	# encart d'info trafic et horloge
+	_rect(vp, Color.WHITE, Rect2(64, 18, 62, 35))
+	_rect(vp, Color("#eeeeee"), Rect2(64, 18, 62, 8))
+	_disc(vp, Color.WHITE, Color("#263040"), Vector2(69, 22), "M")
+	_disc(vp, LINE_2_BLUE, Color.TRANSPARENT, Vector2(79, 22), "2")
+	_rect(vp, Color.BLACK, Rect2(105, 18, 20, 8))
+	var clock := _text(vp, "23:05", SIEL_YELLOW, 6, Vector2(106, 17))
+	var info := _text(vp, info_message, Color("#111111"), 5, Vector2(66, 26))
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.custom_minimum_size = Vector2(58, 0)
+	info.size = Vector2(58, 27)
+	info.clip_text = true
+	info.add_theme_constant_override("line_spacing", -2)
+	# bande de la ligne
+	_rect(vp, LINE_2_BLUE, Rect2(0, 55, 128, 6))
+	return {"viewport": vp, "first": first, "second": second, "clock": clock, "info": info}
 
 
-func _update_siel(siel: Dictionary, train: MF01) -> void:
+func _update_siel(index: int) -> void:
+	var siel: Dictionary = _siel[index]
+	var train := trains[index]
 	var k := fposmod(time + train.offset, CYCLE)
 	var wait := 9.0 - k if k < 9.0 else (0.0 if k < 27.0 else CYCLE - k + 9.0)
 	var first := ceili(wait / 60.0)
+	var second := ceili((wait + CYCLE) / 60.0)
 	siel.first.text = str(first)
 	siel.first.add_theme_color_override("font_color", SIEL_YELLOW_DIM if first == 0 else SIEL_YELLOW)
-	siel.second.text = str(ceili((wait + CYCLE) / 60.0))
+	siel.second.text = str(second)
 	siel.clock.text = clock_text()
+	siel.info.text = info_message
+	var now := "à quai" if first == 0 else "dans %d min" % first
+	for screen in siel_examinables[index]:
+		screen.description = "Direction %s, %s. Le suivant dans %d min. Il est %s.\nInfo trafic : %s" % [
+			train.destination, now, second, clock_text(), info_message]
 
 
 func _rect(parent: Node, color: Color, r: Rect2) -> void:

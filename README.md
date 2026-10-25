@@ -36,7 +36,8 @@ Moteur : Godot 4.3 (rendu « Compatibility », léger et fidèle au style PS1).
 - rames MF01 sur les deux voies, une toutes les 94 s : arrivée, ouverture des portes, bip de
   fermeture, départ ; on peut monter à bord et la rame emmène le joueur (pour l'instant elle
   revient à Monceau, en attendant les autres stations) ;
-- écrans des prochains passages sur chaque quai, avec l'heure de jeu (départ à 23 h 05) ;
+- écrans des prochains passages au format PANAM sur chaque quai : prochains passages, heure de jeu
+  (départ à 23 h 05), encart d'info trafic modifiable par l'histoire ; on peut les examiner ;
 - grondement des rames et bip des portes, fabriqués par le jeu au lancement ;
 - vraies collisions (rampes invisibles sous les marches, garde-fous de quai ôtés quand une
   rame est à quai, portes qui laissent passer une fois ouvertes) ;
