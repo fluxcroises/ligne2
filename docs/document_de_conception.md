@@ -107,14 +107,14 @@ Les petits points sont les autres stations de la ligne : on les traverse en rame
 - **Le faux agent : Franck**, ancien employé d'un sous-traitant de la RATP, renvoyé il y a deux ans. Il porte le gilet orange, conduit la camionnette blanche sans logo et paie les agents de station qui ferment les yeux, comme Sylvain.
 - **Ce que Karim a vu.** Pendant plusieurs semaines, en fin de service, il a aperçu des lumières dans le tunnel entre Monceau et Villiers, à des heures où aucun chantier n'était prévu. Il l'a signalé par écrit… à son responsable de maintenance, Delorme.
 - **Le soir de l'incident.** À 23 h 12, Franck attend au bout du quai. Il dit à Karim : « M. Delorme veut vous voir, c'est pour votre signalement. » Karim le suit sans méfiance (d'où « sans résister » chez Jo). Les caméras sont coupées quatre minutes, la porte de service est forcée parce que la clé de Franck ne tourne plus, et la camionnette attend devant la Rotonde.
-- **Pourquoi Karim est vivant.** Delorme ne veut pas d'un meurtre qui attirerait la police. Il veut savoir à qui d'autre Karim a parlé et récupérer les photos que Karim a prises du tunnel avec son téléphone, qui a disparu avec lui. Karim refuse de parler pour protéger Nadia. Il est enfermé dans un local désaffecté le long de la boucle de retournement de Nation.
+- **Pourquoi Karim est vivant.** Delorme ne veut pas d'un meurtre qui attirerait la police. Il veut savoir à qui d'autre Karim a parlé et récupérer les photos que Karim a prises du tunnel avec son téléphone, qui a disparu avec lui. Karim refuse de parler pour protéger Nadia. Il est enfermé dans une niche technique du tunnel de la boucle de retournement de Nation.
 
 ### Le fil des chapitres (proposition)
 
 | Chapitre | Station | Ce que le joueur découvre |
 | --- | --- | --- |
 | 1 | Monceau | Karim est parti avec un faux agent, et l'agent de station a été payé. *(fait)* |
-| 2 | Villiers | Le « local à Villiers » : un local technique du tunnel qui sert d'entrepôt. On y trouve un objet volé et la trace des trains de travaux. |
+| 2 | Villiers | Le « local à Villiers » : une vieille voiture abandonnée sur une voie de garage du tunnel sert d'entrepôt. On y trouve un objet volé et la trace des trains de travaux. |
 | 3 | Pigalle | Le receleur : un antiquaire de Pigalle qui écoule les objets. Il donne le nom de Franck. |
 | 4 | Jaurès | La partie aérienne de la ligne. Le dépôt des trains de travaux, le planning truqué et la signature de Delorme : l'homme de l'intérieur est démasqué. |
 | 5 | Nation | La boucle de retournement, la nuit. Le joueur retrouve Karim vivant et doit le faire sortir avant le passage du dernier train de travaux. |
@@ -123,7 +123,7 @@ Les petits points sont les autres stations de la ligne : on les traverse en rame
 
 **Ce que le joueur découvre : le tunnel entre Monceau et Villiers sert d'entrepôt, et la marchandise voyage la nuit sur les trains de travaux.**
 
-- **Lieux** : quais de la ligne 2 et couloir de correspondance de la ligne 3, la sortie sur la place, un café ouvert tard, le local technique au bout du quai direction Porte Dauphine.
+- **Lieux** : quais de la ligne 2 et couloir de correspondance de la ligne 3, la sortie sur la place, un café ouvert tard, la voie de garage au bout du quai, où dorment de vieilles voitures Sprague couvertes de tags (voir « Les stations d'après Wikipédia »).
 - **Personnages** :
   - *Inès*, conductrice de la ligne 2 et amie de Karim : il lui avait parlé des lumières dans le tunnel ;
   - *le patron du café* en face de la sortie : il voit passer les équipes de nuit ;
@@ -131,7 +131,7 @@ Les petits points sont les autres stations de la ligne : on les traverse en rame
   - *Franck*, aperçu de loin : il s'enfuit.
 - **Indices** :
   - le double du signalement écrit de Karim, qu'Inès a gardé, adressé à « M. Delorme » ;
-  - une caisse en bois dans le local, avec une étiquette de transport et une statuette volée (l'avis de vol se trouve en ligne, en surface) ;
+  - une caisse en bois dans une des vieilles voitures, avec une étiquette de transport et une statuette volée (l'avis de vol se trouve en ligne, en surface) ;
   - les horaires des trains de travaux, qui ne correspondent à aucun chantier publié ;
   - un ticket du café, payé par carte au nom d'une société de sous-traitance.
 - **Déduction** : relier le signalement, la caisse, l'avis de vol et les horaires pour conclure que *Karim a été enlevé parce qu'il avait vu le trafic, et que quelqu'un de la maintenance le couvre*.
@@ -145,6 +145,76 @@ Petits ajouts au chapitre 1 déjà jouable, pour que la suite paraisse préparé
 - Dans le cahier de Sylvain, sous l'« intervention maintenance », des initiales : « vu avec M.D. ».
 - Une mention en ligne des « travaux de nuit » sur la ligne 2, alors qu'aucun chantier n'est annoncé.
 
+
+## Les stations d'après Wikipédia
+
+**Les pages Wikipédia des cinq stations sont illustrées par plus de 80 photos libres de Wikimedia Commons.** Elles servent de modèle pour le décor, et certaines peuvent devenir de vraies textures :
+
+- photos en **CC0 ou domaine public** (surtout celles de Métroën) : utilisables telles quelles, sans condition ;
+- photos en **CC BY ou CC BY-SA** (surtout celles de Chabe01) : utilisables en citant l'auteur dans CREDITS.md. En CC BY-SA, la texture tirée de la photo reste sous la même licence.
+
+### Monceau (chapitre 1, fait)
+
+- **Ce qu'on voit** :
+  - la bouche Guimard contre la grille du parc ;
+  - la salle des billets à poutres métalliques ;
+  - les quais en voûte carrelée blanche, avec les sièges verts et les tunnels aux deux bouts.
+- **Pour le jeu** : déjà repris (salle des billets, plaque Monceau). Rien à changer.
+- **Photos utiles** :
+  - [salle des billets, 2026](https://commons.wikimedia.org/wiki/File:Station_Monceau_M%C3%A9tro_Paris_-_Paris_VIII_(FR75)_-_2026-01-29_-_2.jpg) (Chabe01, CC BY-SA 4.0) ;
+  - [quai avec rame](https://commons.wikimedia.org/wiki/File:Station_Monceau_M%C3%A9tro_Paris_Ligne_2_-_Paris_XVII_(FR75)_-_2022-07-01_-_1.jpg) (Chabe01, CC BY-SA 4.0) ;
+  - [quai vers le tunnel](https://commons.wikimedia.org/wiki/File:Station_Monceau_M%C3%A9tro_Paris_Ligne_2_-_Paris_XVII_(FR75)_-_2022-07-01_-_4.jpg) (Chabe01, CC BY-SA 4.0).
+
+### Villiers (chapitre 2)
+
+- **Ce qu'on voit** :
+  - des quais de la ligne 2 plus larges qu'à Monceau, en voûte blanche ;
+  - la ligne 3 en correspondance, avec une grande tête de tunnel en arc ;
+  - en surface, des accès sans édicule, avec escalators en inox, boulevard de Courcelles et place Prosper-Goubaux.
+- **La photo qui compte** : la page de Villiers est illustrée par [une photo d'un tunnel désaffecté](https://commons.wikimedia.org/wiki/File:Vintage_Sprague_rolling_stock_in_a_disused_tunnel_inside_the_Paris_Metro_system,_2014.jpg) (freeside510, CC BY 2.0). On y voit de vieilles voitures Sprague, couvertes de tags et garées sur une voie de garage. La photo ne précise pas l'endroit exact.
+- **Pour le jeu** : c'est l'entrepôt idéal. Le butin est caché dans une vieille voiture abandonnée, sur une voie de garage reliée au tunnel de la ligne 2. Ce décor remplace le simple « local technique » prévu jusqu'ici.
+- **Photos utiles** :
+  - [quai ligne 2 direction Nation](https://commons.wikimedia.org/wiki/File:F9485_Paris_8e_et_17e_Metro_Villiers_ligne_2_direction_Nation_rwk.jpg) (Mbzt, CC BY 4.0) ;
+  - [tête de tunnel de la ligne 3](https://commons.wikimedia.org/wiki/File:Metro_de_Paris_-_Ligne_3_-_Villiers_01.jpg) (Clicsouris, CC BY-SA 3.0) ;
+  - [accès boulevard de Courcelles](https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_M%C3%A9tro_Villiers_Boulevard_Courcelles_-_Paris_VIII_(FR75)_-_2022-01-30_-_2.jpg) (Chabe01, CC BY-SA 4.0).
+
+### Pigalle (chapitre 3)
+
+- **Ce qu'on voit** :
+  - des quais de la ligne 2 en voûte, éclairés par une rampe à lumière bleue ;
+  - deux salles des billets, un long couloir carrelé bordé de vert et un escalier à arcade ;
+  - deux bouches Guimard sur le terre-plein du boulevard de Clichy, photographiées de nuit.
+- **Pour le jeu** : le chapitre de la nuit et des néons. Métroën a photographié en CC0 les accès de nuit, les halls, le couloir et l'escalier : on peut les utiliser directement comme textures.
+- **Photos utiles** :
+  - [quai ligne 2, lumière bleue](https://commons.wikimedia.org/wiki/File:Station_Pigalle_M%C3%A9tro_Paris_Ligne_2_-_Paris_XVIII_(FR75)_-_2022-07-01_-_6.jpg) (Chabe01, CC BY-SA 4.0) ;
+  - [accès de nuit](https://commons.wikimedia.org/wiki/File:Pigalle_-_2025_-_Acc%C3%A8s_de_nuit_2.jpg), [hall](https://commons.wikimedia.org/wiki/File:Pigalle_-_2025_-_Hall_occidental_2.jpg), [couloir](https://commons.wikimedia.org/wiki/File:Pigalle_-_2026_-_Couloir_(1).jpg), [escaliers](https://commons.wikimedia.org/wiki/File:Pigalle_-_2026_-_Escaliers_(1).jpg) (Métroën, CC0).
+
+### Jaurès (chapitre 4)
+
+- **Ce qu'on voit** :
+  - une station **aérienne** sur le viaduc du boulevard de la Villette, sous une verrière en arc avec un auvent festonné ;
+  - des plantes suspendues aux colonnes et un espace d'échanges sous le viaduc ;
+  - de nuit, des quais déserts éclairés au néon et un MF01 qui arrive.
+- **Pour le jeu** : le seul chapitre en plein air. On voit la ville depuis le quai, le réseau 4G revient sur le quai, et le dépôt de Delorme peut être caché sous le viaduc.
+- **Photos utiles** :
+  - [MF01 de nuit](https://commons.wikimedia.org/wiki/File:Jaur%C3%A8s_-_Ligne_2_-_2025_-_MF01_de_nuit.jpg), [quais de nuit](https://commons.wikimedia.org/wiki/File:Jaur%C3%A8s_-_Ligne_2_-_2025_-_Quais_de_nuit_(1).jpg), [végétalisation](https://commons.wikimedia.org/wiki/File:Jaur%C3%A8s_-_Ligne_2_-_2025_-_V%C3%A9g%C3%A9talisation_2.jpg) (Métroën, CC0) ;
+  - [quai de la ligne 2 de jour](https://commons.wikimedia.org/wiki/File:Station_M%C3%A9tro_Jaur%C3%A8s_Ligne_2_-_Paris_X_(FR75)_-_2022-04-28_-_4.jpg) (Chabe01, CC BY-SA 4.0) ;
+  - [carte postale ancienne du viaduc](https://commons.wikimedia.org/wiki/File:Paris_-_Voie_aerienne_du_Metropolitain_prise_de_la_station_Allemagne.jpg) (domaine public), utile pour un flash-back ou une affiche.
+
+### Nation (chapitre 5)
+
+- **Ce qu'on voit** :
+  - un terminus aux **quais courbes**, sous un plafond à poutres métalliques vert-de-gris, avec des murs carrelés jaune orangé ;
+  - au bout du quai, [le tunnel du terminus](https://commons.wikimedia.org/wiki/File:F9505_Paris_11e_et_12e_station_Nation_ligne_2_terminus_encours.jpg) (Mbzt, CC BY 4.0) : des voies qui se croisent, des niches éclairées et un MF01 à l'arrêt dans la pénombre.
+- **Pour le jeu** :
+  - le décor de la fin est tout trouvé : Karim est enfermé dans une de ces niches, sur la boucle de retournement ;
+  - les quais courbes changent la façon de construire le décor par rapport aux quais droits de Monceau ;
+  - en surface, la place de la Nation avec ses colonnes et une bouche Guimard.
+- **Photos utiles** :
+  - [quai de la ligne 2](https://commons.wikimedia.org/wiki/File:Ligne-2-Nation-2.jpg) et [vue du quai](https://commons.wikimedia.org/wiki/File:Ligne-2-Nation-3.jpg) (Pline, CC BY-SA 3.0) ;
+  - [MF01 à Nation](https://commons.wikimedia.org/wiki/File:MF01NationLTR.JPG) (domaine public) ;
+  - [plaque Nation, ligne 2](https://commons.wikimedia.org/wiki/File:Panneau_Station_M%C3%A9tro_Nation_Ligne_2_-_Paris_XI_(FR75)_-_2022-04-28_-_1.jpg) (Chabe01, CC BY-SA 4.0) ;
+  - [bouche Guimard](https://commons.wikimedia.org/wiki/File:Guimard_Nation_Dorian.jpg) (Sigoise, CC BY-SA 3.0).
 
 ## Base technique
 
