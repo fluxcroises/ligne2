@@ -35,6 +35,7 @@ Retenues comme modèles pour la station Villiers. Aucune n'est encore reproduite
   par [Chabe01](https://commons.wikimedia.org/wiki/User:Chabe01), Wikimedia Commons,
   licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
   <https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_M%C3%A9tro_Villiers_Place_Prosper_Goubaux_-_Paris_XVII_(FR75)_-_2022-01-30_-_2.jpg>
+  Sert de modèle à l'accès de la place (escalier, escalator, garde-corps) et à `mat_m.png`, dessinée.
 - **Boucle désaffectée de Villiers** : « Vintage Sprague rolling stock in a disused tunnel inside the Paris Metro system, 2014.jpg »,
   par freeside510, Wikimedia Commons, licence [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/).
   <https://commons.wikimedia.org/wiki/File:Vintage_Sprague_rolling_stock_in_a_disused_tunnel_inside_the_Paris_Metro_system,_2014.jpg>
@@ -63,7 +64,8 @@ Le lettrage de `plaque.png` a été extrait de sa photo de l'enseigne de Monceau
 
 ## Polices
 
-- Lettrage de la plaque « Villiers » (`nom_villiers.png`) : DejaVu Sans Bold, licence libre
+- Lettrage de la plaque « Villiers » (`nom_villiers.png`) et du store du café (`cafe_levis.png`, café
+  inventé) : DejaVu Sans Bold, licence libre
   Bitstream Vera / DejaVu.
 
 - Interface : [VT323](https://fonts.google.com/specimen/VT323), par Peter Hull, licence SIL Open Font License 1.1

@@ -38,6 +38,8 @@ var _solid_side := 1.0
 var _lanterns: Array[Vector3] = []
 ## Lampes des parties souterraines (couloirs, escaliers), éclairage par sommet.
 var _under_lamps: Array[Vector3] = []
+var _lamp_list: Array = []        # [position, couleur] de toutes les lampes
+var _lamp_timer := 0.0
 ## Personnages présents, par identifiant de dialogue.
 var people := {}
 var _player: Node3D
@@ -51,6 +53,10 @@ func _begin() -> void:
 	if not Enquete.started:   # lancé directement depuis l'éditeur, sans passer par le titre
 		Enquete.new_game()
 	Sons.playing = true
+	# les paramètres globaux survivent au changement de scène : on éteint les zones
+	for z in ["zone2", "zone3"]:
+		_global(z + "_min", Vector3(1e4, 1e4, 1e4))
+		_global(z + "_max", Vector3(-1e4, -1e4, -1e4))
 	_make_materials()
 	_collisions = StaticBody3D.new()
 	_collisions.name = "Collisions"
@@ -81,10 +87,14 @@ func _set_platform_zone() -> void:
 	_global("zone_max", Vector3(HALF + 1.0, -0.3, ZB + 0.6))
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not _player:
 		_player = get_tree().get_first_node_in_group("player")
 		return
+	_lamp_timer += delta
+	if _lamp_timer > 0.5 and _lamp_list.size() > 8:
+		_lamp_timer = 0.0
+		_update_lamps()
 	var ug := _player.global_position.y < -2.0
 	if ug != underground:
 		underground = ug
@@ -104,14 +114,29 @@ func set_night(on: bool) -> void:
 	night = on
 	_global("sun_color", Vector3(0.12, 0.14, 0.24) if on else Vector3(1.0, 0.96, 0.86))
 	_global("ambient_color", Vector3(0.16, 0.18, 0.28) if on else Vector3(0.52, 0.56, 0.62))
+	_lamp_list.clear()
+	for p in _lanterns:
+		_lamp_list.append([p, Vector3(1.5, 0.9, 0.4) if on else Vector3.ZERO])
+	for p in _under_lamps:
+		_lamp_list.append([p, Vector3(1.05, 1.0, 0.85)])
+	_update_lamps()
+	M.lanterne.set_shader_parameter("emission", Vector3(1.4, 1.0, 0.6) if on else Vector3.ZERO)
+	M.cand.set_shader_parameter("emission", Vector3(0.9, 0.8, 0.5) if on else Vector3.ZERO)
+	_apply_fog()
+
+
+## Le shader n'éclaire qu'avec 8 lampes : s'il y en a plus, on garde les 8 plus proches du joueur.
+func _update_lamps() -> void:
+	var lamps := _lamp_list.duplicate()
+	if _player and lamps.size() > 8:
+		var at := _player.global_position
+		lamps.sort_custom(func(a: Array, b: Array) -> bool:
+			return (a[0] as Vector3).distance_squared_to(at) < (b[0] as Vector3).distance_squared_to(at))
 	var pos: Array[Vector3] = []
 	var col: Array[Vector3] = []
-	for p in _lanterns:
-		pos.append(p)
-		col.append(Vector3(1.5, 0.9, 0.4) if on else Vector3.ZERO)
-	for p in _under_lamps:
-		pos.append(p)
-		col.append(Vector3(1.05, 1.0, 0.85))
+	for lamp in lamps.slice(0, 8):
+		pos.append(lamp[0])
+		col.append(lamp[1])
 	while pos.size() < 8:
 		pos.append(Vector3(0, -99, 0))
 		col.append(Vector3.ZERO)
@@ -119,9 +144,6 @@ func set_night(on: bool) -> void:
 	_global("lamp_pos_b", _pack(pos, 4))
 	_global("lamp_col_a", _pack(col, 0))
 	_global("lamp_col_b", _pack(col, 4))
-	M.lanterne.set_shader_parameter("emission", Vector3(1.4, 1.0, 0.6) if on else Vector3.ZERO)
-	M.cand.set_shader_parameter("emission", Vector3(0.9, 0.8, 0.5) if on else Vector3.ZERO)
-	_apply_fog()
 
 
 func _apply_fog() -> void:
@@ -629,3 +651,76 @@ func _line_plan(from: String, terminus: String, pos: Vector3, ry: float) -> void
 	var depth := Vector3(0.15, size.y, size.x) if absf(sin(ry)) > 0.5 else Vector3(size.x, size.y, 0.15)
 	_examinable_shape(item, depth)
 	add_child(item)
+
+
+# --- Surface et salles des billets ----------------------------------------------
+
+## Immeuble haussmannien : rez-de-chaussée à portes, étages, corniche et toit de zinc.
+func _block(x0: float, z0: float, x1: float, z1: float, h: float, facade: String) -> void:
+	var pts := [Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1), Vector2(x0, z0)]
+	var fm: Material = M.facA if facade == "a" else M.facB
+	var tw := 6.0 if facade == "a" else 5.0
+	var th := 3.4 if facade == "a" else 12.0
+	for i in 4:
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[i + 1]
+		_wall(M.porte, a.x, a.y, b.x, b.y, 0, 4.2, 4.2, 4.2)
+		_wall(fm, a.x, a.y, b.x, b.y, 4.2, h, tw, th)
+	box(M.zinc, x1 - x0 - 0.8, 3, z1 - z0 - 0.8, (x0 + x1) / 2, h + 1.5, (z0 + z1) / 2, (x1 - x0) / 3, 1)
+	box(M.pierre, x1 - x0 + 0.3, 0.35, z1 - z0 + 0.3, (x0 + x1) / 2, h, (z0 + z1) / 2, (x1 - x0) / 4, 0.2)
+
+
+
+## Platane : tronc et deux masses de feuillage ; `i` varie la taille.
+func _tree(x: float, z: float, i: int) -> void:
+	var s := 0.9 + ((i * 37) % 5) / 12.0
+	add(PsxGeo.cylinder(0.22 * s, 0.32 * s, 5 * s, 5), M.tronc, Vector3(x, 2.5 * s, z))
+	add(PsxGeo.uv_scale(PsxGeo.icosahedron(2.6 * s), 2, 2), M.feuil, Vector3(x, 6 * s, z), Vector3(0, x * 1.7, 0))
+	add(PsxGeo.uv_scale(PsxGeo.icosahedron(2.0 * s), 2, 2), M.feuil, Vector3(x + 1.2 * s, 7.2 * s, z - 0.6 * s), Vector3(0, 0, z * 0.9))
+
+
+## Ligne de contrôle d'une salle des billets, en travers de la salle (de xl à xr, en z, sol y) :
+## à gauche les deux portes de sortie inox (fermées dans ce sens), puis `n` caissons de
+## portillons et leurs passages, les poteaux des portes anti-fraude, et un caisson jusqu'au mur.
+## On entre par le côté -z.
+func _build_gate_row(xl: float, xr: float, z: float, y: float, n := 4) -> void:
+	var steel := _mat("blanc", 0x6e7174)
+	var steel_light := _mat("blanc", 0xb2b5b8)
+	var green := _mat("blanc", 0x2fa38a)
+	var arrow := _mat("blanc", 0x39d06a, false, true)
+	var red := _mat("blanc", 0xc8281e)
+	var purple := _mat("blanc", 0xb69ad8)
+	# portes de sortie
+	var exit_x := xl + 0.975
+	for px in [xl + 0.1, xl + 1.85]:
+		box(steel_light, 0.08, 2.1, 0.1, px, y + 1.05, z)
+	box(steel_light, 1.95, 0.1, 0.1, exit_x, y + 2.1, z)
+	box(M.noir, 0.7, 0.12, 0.02, exit_x, y + 2.25, z - 0.06)
+	for k in 2:
+		box(red, 0.08, 0.08, 0.01, exit_x - 0.25 + k * 0.5, y + 2.25, z - 0.075)
+	for leaf_x in [xl + 0.55, xl + 1.4]:
+		box(steel, 0.8, 1.45, 0.05, leaf_x, y + 0.85, z)
+	_solid(Vector3(1.95, 2.1, 0.12), Vector3(exit_x, y + 1.05, z))
+	# portillons
+	var last := xl
+	for i in n:
+		var x := xl + 2.05 + i * 1.05
+		last = x
+		box(steel, 0.3, 0.9, 1.2, x, y + 0.45, z)
+		box(steel_light, 0.32, 0.12, 1.22, x, y + 0.96, z)               # dessus
+		box(steel_light, 0.32, 0.18, 0.3, x, y + 1.08, z - 0.45)          # tête arrondie
+		add(PsxGeo.cylinder(0.08, 0.08, 0.01, 8), purple, Vector3(x, y + 1.03, z - 0.15))   # lecteur Navigo
+		box(M.noir, 0.01, 0.16, 0.08, x - 0.155, y + 0.6, z - 0.5)
+		box(arrow, 0.012, 0.04, 0.05, x - 0.157, y + 0.62, z - 0.5)
+		box(red, 0.01, 0.1, 0.1, x - 0.155, y + 0.42, z - 0.5)
+		if i < n - 1:
+			# bras du tripode, en travers du passage
+			add(PsxGeo.cylinder(0.02, 0.02, 0.45, 4), M.inox, Vector3(x + 0.38, y + 0.88, z - 0.2), Vector3(0, 0, PI / 2))
+		# poteau de la porte anti-fraude, vert en haut, battant ouvert
+		box(steel_light, 0.08, 1.7, 0.18, x, y + 0.85, z + 0.75)
+		box(green, 0.085, 0.35, 0.185, x, y + 1.55, z + 0.75)
+		add(PsxGeo.cylinder(0.14, 0.14, 0.28, 8), steel_light, Vector3(x + (0.2 if i < n - 1 else -0.2), y + 1.1, z + 0.75))
+		_solid(Vector3(0.3, 1.0, 1.2), Vector3(x, y + 0.5, z))
+	var end_x := last + 1.0
+	if xr > end_x:
+		_solid(Vector3(xr - end_x, 1.0, 1.2), Vector3((end_x + xr) / 2, y + 0.5, z))   # bout de ligne

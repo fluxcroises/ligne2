@@ -1,5 +1,5 @@
 extends SceneTree
-## Villiers : du couloir en tube au quai direction Porte Dauphine, par l'escalier et le passage
+## Villiers : de la place à la salle des billets, du couloir en tube au quai direction Porte Dauphine, par l'escalier et le passage
 ## sous les voies jusqu'au quai direction Nation, puis par le couloir de correspondance
 ## jusqu'au quai de la ligne 3.
 var player
@@ -23,9 +23,16 @@ func _initialize() -> void:
 	await process_frame
 	player = get_first_node_in_group("player")
 	station = get_first_node_in_group("lieu")
-	player.global_position = Vector3(-19, -6.4, 13.5)
-	await walk(180, 4.0, "couloir en tube -> quai A")
+	player.global_position = Vector3(-18.8, 0.1, -16.0)
+	await walk(180, 2.0, "place Prosper-Goubaux")
+	await walk(180, 3.5, "escalier -> salle des billets")
+	await walk(180, 3.0, "portillons -> escalier des quais")
+	await walk(180, 6.0, "couloir en tube -> quai A")
 	await walk(180, 2.0, "vers le bord du quai (garde-fou)")
+	player.global_position = Vector3(-21.1, -3.1, -3.5)
+	await walk(0, 4.0, "remontée par l'escalator")
+	player.global_position = Vector3(-17.0, 0.1, -2.0)
+	await walk(150, 3.5, "vers le café, rue de Lévis")
 	player.global_position = Vector3(-3.0, -6.4, 20.8)
 	await walk(-90, 4.0, "descente vers le passage")
 	player.global_position.x = 6.7   # au milieu du passage, loin de l'ouverture du couloir

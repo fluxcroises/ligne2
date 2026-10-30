@@ -301,20 +301,6 @@ func _build_rotonde() -> void:
 
 
 
-func _block(x0: float, z0: float, x1: float, z1: float, h: float, facade: String) -> void:
-	var pts := [Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1), Vector2(x0, z0)]
-	var fm: Material = M.facA if facade == "a" else M.facB
-	var tw := 6.0 if facade == "a" else 5.0
-	var th := 3.4 if facade == "a" else 12.0
-	for i in 4:
-		var a: Vector2 = pts[i]
-		var b: Vector2 = pts[i + 1]
-		_wall(M.porte, a.x, a.y, b.x, b.y, 0, 4.2, 4.2, 4.2)
-		_wall(fm, a.x, a.y, b.x, b.y, 4.2, h, tw, th)
-	box(M.zinc, x1 - x0 - 0.8, 3, z1 - z0 - 0.8, (x0 + x1) / 2, h + 1.5, (z0 + z1) / 2, (x1 - x0) / 3, 1)
-	box(M.pierre, x1 - x0 + 0.3, 0.35, z1 - z0 + 0.3, (x0 + x1) / 2, h, (z0 + z1) / 2, (x1 - x0) / 4, 0.2)
-
-
 func _build_buildings() -> void:
 	_block(-34, 25, -8, 36, 18, "a")
 	_block(-6, 25, 12, 36, 19, "a")
@@ -336,12 +322,7 @@ const MORRIS := Vector3(11, 0, 16)
 
 func _build_trees() -> void:
 	for i in TREES.size():
-		var x: float = TREES[i][0]
-		var z: float = TREES[i][1]
-		var s := 0.9 + ((i * 37) % 5) / 12.0
-		add(PsxGeo.cylinder(0.22 * s, 0.32 * s, 5 * s, 5), M.tronc, Vector3(x, 2.5 * s, z))
-		add(PsxGeo.uv_scale(PsxGeo.icosahedron(2.6 * s), 2, 2), M.feuil, Vector3(x, 6 * s, z), Vector3(0, x * 1.7, 0))
-		add(PsxGeo.uv_scale(PsxGeo.icosahedron(2.0 * s), 2, 2), M.feuil, Vector3(x + 1.2 * s, 7.2 * s, z - 0.6 * s), Vector3(0, 0, z * 0.9))
+		_tree(TREES[i][0], TREES[i][1], i)
 	add(PsxGeo.cylinder(0.62, 0.62, 3.2, 8), M.morris, MORRIS + Vector3(0, 1.6, 0))
 	add(PsxGeo.sphere(0.75, 8, 4, 0, TAU, 0, PI / 2), M.morris, MORRIS + Vector3(0, 3.2, 0), Vector3.ZERO, Vector3(1, 1.3, 1))
 
@@ -524,7 +505,7 @@ func _build_ticket_hall() -> void:
 	leaf_body.add_child(leaf_shape)
 	loge_door.add_child(leaf_body)
 
-	_build_gates()
+	_build_gate_row(-HALL_W, HALL_W, GATES_Z, CY)
 	_set_hall_mirror(false)
 
 
@@ -565,46 +546,6 @@ func _vaulted_bay(m: Material, z0: float, z1: float) -> void:
 ## Mur vertical (boîte) dans le plan x, de z0 à z1 et de y0 à y1.
 func _wall_box(m: Material, x: float, z0: float, z1: float, y0: float, y1: float) -> void:
 	box(m, 0.12, y1 - y0, z1 - z0, x, (y0 + y1) / 2, (z0 + z1) / 2, (z1 - z0) / 2, (y1 - y0) / 2)
-
-
-## Au fond de la salle : à gauche les deux portes de sortie inox (fermées dans ce sens), à droite
-## quatre caissons de portillons et trois passages, puis les poteaux des portes anti-fraude.
-func _build_gates() -> void:
-	var steel := _mat("blanc", 0x6e7174)
-	var steel_light := _mat("blanc", 0xb2b5b8)
-	var green := _mat("blanc", 0x2fa38a)
-	var arrow := _mat("blanc", 0x39d06a, false, true)
-	var red := _mat("blanc", 0xc8281e)
-	var purple := _mat("blanc", 0xb69ad8)
-	# portes de sortie
-	for px in [-HALL_W + 0.1, -0.95]:
-		box(steel_light, 0.08, 2.1, 0.1, px, CY + 1.05, GATES_Z)
-	box(steel_light, HALL_W - 0.85, 0.1, 0.1, (-HALL_W - 0.85) / 2, CY + 2.1, GATES_Z)
-	box(M.noir, 0.7, 0.12, 0.02, (-HALL_W - 0.85) / 2, CY + 2.25, GATES_Z - 0.06)
-	for k in 2:
-		box(red, 0.08, 0.08, 0.01, (-HALL_W - 0.85) / 2 - 0.25 + k * 0.5, CY + 2.25, GATES_Z - 0.075)
-	for leaf_x in [-2.25, -1.4]:
-		box(steel, 0.8, 1.45, 0.05, leaf_x, CY + 0.85, GATES_Z)
-	_solid(Vector3(HALL_W - 0.85, 2.1, 0.12), Vector3((-HALL_W - 0.85) / 2, CY + 1.05, GATES_Z))
-	# portillons
-	for i in 4:
-		var x := -0.75 + i * 1.05
-		box(steel, 0.3, 0.9, 1.2, x, CY + 0.45, GATES_Z)
-		box(steel_light, 0.32, 0.12, 1.22, x, CY + 0.96, GATES_Z)               # dessus
-		box(steel_light, 0.32, 0.18, 0.3, x, CY + 1.08, GATES_Z - 0.45)          # tête arrondie
-		add(PsxGeo.cylinder(0.08, 0.08, 0.01, 8), purple, Vector3(x, CY + 1.03, GATES_Z - 0.15))   # lecteur Navigo
-		box(M.noir, 0.01, 0.16, 0.08, x - 0.155, CY + 0.6, GATES_Z - 0.5)
-		box(arrow, 0.012, 0.04, 0.05, x - 0.157, CY + 0.62, GATES_Z - 0.5)
-		box(red, 0.01, 0.1, 0.1, x - 0.155, CY + 0.42, GATES_Z - 0.5)
-		if i < 3:
-			# bras du tripode, en travers du passage
-			add(PsxGeo.cylinder(0.02, 0.02, 0.45, 4), M.inox, Vector3(x + 0.38, CY + 0.88, GATES_Z - 0.2), Vector3(0, 0, PI / 2))
-		# poteau de la porte anti-fraude, vert en haut, battant ouvert
-		box(steel_light, 0.08, 1.7, 0.18, x, CY + 0.85, GATES_Z + 0.75)
-		box(green, 0.085, 0.35, 0.185, x, CY + 1.55, GATES_Z + 0.75)
-		add(PsxGeo.cylinder(0.14, 0.14, 0.28, 8), steel_light, Vector3(x + (0.2 if i < 3 else -0.2), CY + 1.1, GATES_Z + 0.75))
-		_solid(Vector3(0.3, 1.0, 1.2), Vector3(x, CY + 0.5, GATES_Z))
-	_solid(Vector3(HALL_W - 2.4, 1.0, 1.2), Vector3((HALL_W + 2.4) / 2, CY + 0.5, GATES_Z))   # bout de ligne
 
 
 # --- Kiosque à journaux et personnages du chapitre 1 ---------------------------

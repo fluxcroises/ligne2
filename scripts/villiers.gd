@@ -10,6 +10,18 @@ extends Station
 ## tourné (LINE3) ; sur le quai direction Gallieni, un petit local carrelé à porte grise.
 ## Même repère que Monceau (voir Station) ; la salle des billets et la surface viendront ensuite.
 
+# Salle des billets, sous la place Prosper-Goubaux ; escaliers dans l'axe du couloir en tube
+const CY := -3.24              # sol de la salle
+const HALL_C := -0.7           # plafond
+const HALL_X0 := -23.5
+const HALL_X1 := -14.5
+const HALL_Z0 := -4.0          # côté rue (escalier et escalator de sortie)
+const HALL_Z1 := 6.0           # côté quais (escalier vers le couloir en tube)
+const GATE_Z := 2.5            # ligne de contrôle
+const EXIT_Z := -10.0          # haut de l'escalier, au niveau de la place
+const ESC := Vector2(-21.8, -20.4)    # escalator de sortie (x)
+const TREMIE := Vector2(-21.95, -17.75)   # trémie sur la place (x)
+
 # Couloir en tube vers la sortie, perpendiculaire au quai A
 const TUBE_X := -19.0          # axe du couloir
 const TUBE_HW := 1.2           # demi-largeur
@@ -59,9 +71,12 @@ func _underpass() -> Dictionary:
 
 
 func _ready() -> void:
-	_under_lamps = [Vector3(TUBE_X, PY + 2.0, 18.0), Vector3(TUBE_X, PY + 2.0, 13.5)]
+	_under_lamps = [Vector3(TUBE_X, PY + 2.0, 18.0), Vector3(TUBE_X, PY + 2.0, 13.5), Vector3(TUBE_X, -2.6, 9.0),
+		Vector3(-19.0, -1.3, 4.0), Vector3(-19.0, -1.3, -1.5)]
 	for p in _boucle_lamps():
 		_under_lamps.append(LINE3 * p)
+	for l in LAMPS:
+		_lanterns.append(Vector3(l.x, 4.4, l.y))
 	_begin()
 	M.nom = _mat("nom_villiers")
 	M.rambarde = _mat("rambarde_villiers", 0xffffff, true)
@@ -75,6 +90,8 @@ func _ready() -> void:
 	_build_underpass(_underpass())
 	_build_signs()
 	_build_tube()
+	_build_hall()
+	_build_street()
 	_build_correspondence()
 	_frame = LINE3
 	trafic3 = _add_trafic("Trafic3", [[25.5, -1, 1, 20.0, "Pont de Levallois"], [28.5, 1, -1, 66.0, "Gallieni"]],
@@ -90,6 +107,10 @@ func _ready() -> void:
 	_global("zone2_color", Vector3(0.98, 0.97, 0.92))
 	_global("zone2_min", a.min(b))
 	_global("zone2_max", a.max(b))
+	# troisième zone : la salle des billets
+	_global("zone3_color", Vector3(0.78, 0.78, 0.76))
+	_global("zone3_min", Vector3(HALL_X0 - 0.1, CY - 0.1, HALL_Z0 - 0.1))
+	_global("zone3_max", Vector3(HALL_X1 + 0.1, HALL_C + 0.1, HALL_Z1 + 0.1))
 	set_night(night)
 
 
@@ -101,6 +122,12 @@ func place_name(pos: Vector3) -> String:
 			if t.is_moving(train):
 				return "Rame · prochaine station : Villiers"
 			return "Rame ligne %s · direction %s" % [t.line, train.destination]
+	if pos.y > -0.6:
+		return "Rue de Lévis" if pos.z > 4.0 and pos.x > -25.0 and pos.x < -13.0 else "Place Prosper-Goubaux"
+	if pos.z < HALL_Z1 and pos.y < HALL_C and pos.x < HALL_X1 + 0.5 and pos.x > HALL_X0 - 0.5:
+		return "Escalier · Villiers" if pos.z < HALL_Z0 or pos.y > CY + 0.3 else "Salle des billets · Villiers"
+	if pos.z < TUBE_Z0 and pos.y > PY + 0.2 and absf(pos.x - TUBE_X) < 2.0:
+		return "Escalier · Villiers"
 	var local3 := LINE3.affine_inverse() * pos
 	if local3.z > _boucle_wall_z() - 0.3 and local3.y < PY + 3.0:
 		return "Boucle désaffectée · Villiers"
@@ -239,12 +266,17 @@ func _build_tube() -> void:
 			g.i.append_array([a, b, a + 1, b, b + 1, a + 1])
 	add(g, M.carreau, Vector3.ZERO)
 	rect(M.sol, TUBE_X - TUBE_HW, TUBE_Z0, TUBE_X + TUBE_HW, ZA, PY, 2.4)
-	# au fond : rideau métallique baissé (la salle des billets n'est pas encore construite)
-	var end := PsxGeo.polygon(_tube_profile(), 1 / TW, 1 / TH)
-	add(end, M.carreau, Vector3(TUBE_X, 0, TUBE_Z0))
-	box(_mat("blanc", 0x5a5e58), 2 * TUBE_HW - 0.2, 2.2, 0.06, TUBE_X, PY + 1.1, TUBE_Z0 + 0.05, 1, 6)
+	# au fond, l'escalier vers la salle des billets : on bouche le haut de l'arc au-dessus
+	var over := PackedVector2Array([Vector2(-TUBE_HW, TUBE_SPRING)])
+	for i in range(1, 12):
+		var a := PI - PI * i / 12
+		over.append(Vector2(TUBE_HW * cos(a), TUBE_SPRING + (TUBE_TOP - TUBE_SPRING) * sin(a)))
+	over.append_array([Vector2(TUBE_HW, TUBE_SPRING), Vector2(TUBE_HW, TUBE_TOP), Vector2(-TUBE_HW, TUBE_TOP)])
+	add(PsxGeo.polygon(over, 1 / TW, 1 / TH), M.carreau, Vector3(TUBE_X, 0, TUBE_Z0))
 	var exit_sign := _sign([["sortie", "Sortie"]])
-	plane(exit_sign, 1.2, 0.2, TUBE_X, TUBE_SPRING + 0.75, TUBE_Z0 + 0.04, 0)
+	for r in [0.0, PI]:
+		plane(exit_sign, 1.2, 0.2, TUBE_X, TUBE_TOP - 0.25, TUBE_Z0 + 0.6 + (0.02 if r == 0.0 else -0.02), r)
+	box(M.fonteDark, 1.22, 0.22, 0.03, TUBE_X, TUBE_TOP - 0.25, TUBE_Z0 + 0.6)
 	# deux appliques de part et d'autre, comme sur la photo
 	for z in [13.6, 17.6]:
 		for s in [-1.0, 1.0]:
@@ -258,7 +290,6 @@ func _build_tube_colliders() -> void:
 	_solid(Vector3(2 * TUBE_HW, 0.2, length), Vector3(TUBE_X, PY - 0.1, mid))
 	for s in [-1.0, 1.0]:
 		_solid(Vector3(0.2, 3.0, length), Vector3(TUBE_X + s * (TUBE_HW + 0.1), PY + 1.5, mid))
-	_solid(Vector3(2 * TUBE_HW, 3.0, 0.2), Vector3(TUBE_X, PY + 1.5, TUBE_Z0 - 0.1 + 0.15))
 
 
 # --- Couloir de correspondance -------------------------------------------------
@@ -667,3 +698,251 @@ func _solid_xf(size: Vector3, xf: Transform3D) -> void:
 	shape.shape.size = size
 	shape.transform = _frame * xf
 	_collisions.add_child(shape)
+
+
+# --- Salle des billets ---------------------------------------------------------
+# Sans photo de la salle de Villiers : une salle rénovée ordinaire, carreaux blancs et bande
+# bleu clair comme sur les quais, plafond blanc à néons, la ligne de contrôle (comme à
+# Monceau), le guichet « Services » et deux automates.
+
+func _build_hall() -> void:
+	var w := HALL_X1 - HALL_X0
+	var d := HALL_Z1 - HALL_Z0
+	var h := HALL_C - CY
+	var xm := (HALL_X0 + HALL_X1) / 2
+	var zm := (HALL_Z0 + HALL_Z1) / 2
+	rect(_mat("sol_goudron", 0xc8c8c8), HALL_X0, HALL_Z0, HALL_X1, HALL_Z1, CY, 2.4)
+	rect(M.platre, HALL_X0, HALL_Z0, HALL_X1, HALL_Z1, HALL_C, 2.0, PI / 2)
+	for x in [HALL_X0, HALL_X1]:
+		var ry := PI / 2 if x == HALL_X0 else -PI / 2
+		plane(M.carreau, d, h, x, (CY + HALL_C) / 2, zm, ry, d / TW, h / TH)
+		plane(M.carreau_bleu, d, 0.25, x + (0.01 if x == HALL_X0 else -0.01), CY + 0.125, zm, ry, d / 0.6, 1)
+	# murs du fond, percés : escalier du couloir (côté quais), escalier et escalator (côté rue)
+	for wall in [[HALL_Z1, [[HALL_X0, TUBE_X - TUBE_HW], [TUBE_X + TUBE_HW, HALL_X1]], PI],
+			[HALL_Z0, [[HALL_X0, TREMIE.x], [TREMIE.y, HALL_X1]], 0.0]]:
+		for run in wall[1]:
+			var length: float = run[1] - run[0]
+			plane(M.carreau, length, h, (run[0] + run[1]) / 2, (CY + HALL_C) / 2, wall[0], wall[2], length / TW, h / TH)
+			plane(M.carreau_bleu, length, 0.25, (run[0] + run[1]) / 2, CY + 0.125, wall[0] + (0.01 if wall[2] == 0.0 else -0.01), wall[2], length / 0.6, 1)
+	for x in [-21.0, -17.0]:
+		for z in [-2.0, 0.8, 4.4]:
+			box(M.neon, 1.2, 0.04, 0.3, x, HALL_C - 0.02, z)
+	_build_gate_row(HALL_X0, HALL_X1, GATE_Z, CY)
+
+	# guichet « Services » dans le mur est : vitre, tablette, bandeau ; la loge derrière
+	var white := _mat("blanc", 0xe6e5e0)
+	var services := _sign_from_texture(Panneaux.band(self, "i", "Services"))
+	var tickets := _sign_from_texture(Panneaux.band(self, "T", "Tickets"))
+	for m in [services, tickets]:
+		m.set_shader_parameter("emission", Vector3(0.8, 0.8, 0.8))
+	box(_mat("blanc", 0x1a2228, false, true), 0.04, 1.0, 2.2, HALL_X1 - 0.02, CY + 1.6, -1.2)   # vitre sombre
+	box(_mat("blanc", 0xd8c890, false, true), 0.02, 0.4, 0.6, HALL_X1 - 0.04, CY + 1.7, -1.6)  # lampe de la loge
+	box(white, 0.3, 0.05, 2.2, HALL_X1 - 0.15, CY + 1.08, -1.2)
+	box(_mat("blanc", 0x2e2f31), 0.12, 1.05, 2.4, HALL_X1 - 0.06, CY + 0.52, -1.2)
+	plane(services, 2.2, 0.24, HALL_X1 - 0.04, CY + 2.3, -1.2, -PI / 2)
+	_solid(Vector3(0.4, 1.05, 2.4), Vector3(HALL_X1 - 0.2, CY + 0.52, -1.2))
+	# deux automates contre le mur ouest
+	for z in [-2.6, -1.6]:
+		box(_mat("blanc", 0xd8d8d4), 0.45, 1.7, 0.7, HALL_X0 + 0.24, CY + 0.85, z)
+		box(M.noir, 0.02, 0.3, 0.4, HALL_X0 + 0.47, CY + 1.25, z)
+		box(_mat("blanc", 0x7a3aa8), 0.02, 0.35, 0.3, HALL_X0 + 0.47, CY + 0.6, z)
+		_solid(Vector3(0.45, 1.7, 0.7), Vector3(HALL_X0 + 0.24, CY + 0.85, z))
+	plane(tickets, 1.6, 0.24, HALL_X0 + 0.04, CY + 2.3, -2.1, PI / 2)
+	for m in [M.plan_reseau]:
+		box(M.inox, 0.05, 1.3, 1.3, HALL_X0 + 0.03, CY + 1.4, 0.6)
+		plane(m, 1.2, 1.2, HALL_X0 + 0.07, CY + 1.4, 0.6, PI / 2)
+	# panneaux suspendus : vers les quais et vers la sortie
+	var to_quais := _sign([["ligne", "Pte Dauphine"], ["ligne", "Nation"], ["ligne3", "Pont de Levallois"], ["ligne3", "Gallieni"]])
+	var out := _sign([["sortie", "Place Prosper-Goubaux"]])
+	for r in [0.0, PI]:   # lisibles des deux côtés
+		var o := -0.05 if r == PI else 0.05   # assez loin du support : les sommets tremblent
+		plane(to_quais, 1.2, 0.8, -18.5, HALL_C - 0.45, GATE_Z - 0.9 + o, r)
+		plane(out, 1.2, 0.2, -19.8, HALL_C - 0.2, HALL_Z0 + 1.0 + o, r)
+	box(M.fonteDark, 1.22, 0.82, 0.02, -18.5, HALL_C - 0.45, GATE_Z - 0.9)
+	box(M.fonteDark, 1.22, 0.22, 0.02, -19.8, HALL_C - 0.2, HALL_Z0 + 1.0)
+	_line_plan("Villiers", "Porte Dauphine", Vector3(HALL_X1 - 0.03, CY + 1.4, 4.4), -PI / 2)
+
+	# escalier du couloir en tube (de z = 12 au quai, à z = 6 dans la salle)
+	var n := 12
+	var rise := (CY - PY) / n
+	var run := (TUBE_Z0 - HALL_Z1) / n
+	for i in n:
+		var top := PY + (i + 1) * rise
+		var z := TUBE_Z0 - (i + 0.5) * run
+		box(M.marche, 2 * TUBE_HW, top - PY + 0.3, run, TUBE_X, (top + PY - 0.3) / 2, z, 2, 1)
+		box(M.inox, 2 * TUBE_HW, 0.02, 0.05, TUBE_X, top + 0.01, z - run / 2 + 0.025)
+	var wall := PackedVector2Array([Vector2(TUBE_Z0, PY), Vector2(HALL_Z1, CY), Vector2(HALL_Z1, HALL_C), Vector2(TUBE_Z0, TUBE_TOP)])
+	for sx in [-1.0, 1.0]:
+		add(PsxGeo.polygon(wall, 1 / TW, 1 / TH), M.carreau, Vector3(TUBE_X + sx * TUBE_HW, 0, 0), Vector3(0, -PI / 2, 0))
+	_ceiling_quad(TUBE_X - TUBE_HW, TUBE_X + TUBE_HW, TUBE_Z0, TUBE_TOP, HALL_Z1, HALL_C)
+	add(PsxGeo.box(0.04, 0.04, Vector2(TUBE_Z0 - HALL_Z1, CY - PY).length()), M.candPost,
+		Vector3(TUBE_X + TUBE_HW - 0.06, (PY + CY) / 2 + 0.9, (TUBE_Z0 + HALL_Z1) / 2), Vector3(atan2(CY - PY, TUBE_Z0 - HALL_Z1), 0, 0))
+
+	# escalier et escalator de sortie (de la salle, z = -4, à la place, z = -10)
+	var sx0 := TUBE_X - TUBE_HW
+	var sx1 := TUBE_X + TUBE_HW
+	run = (HALL_Z0 - EXIT_Z) / n
+	rise = -CY / n
+	for i in n:
+		var top := CY + (i + 1) * rise
+		var z := HALL_Z0 - (i + 0.5) * run
+		box(M.marche, sx1 - sx0, top - CY + 0.3, run, TUBE_X, (top + CY - 0.3) / 2, z, 2, 1)
+		box(M.inox, sx1 - sx0, 0.02, 0.05, TUBE_X, top + 0.01, z - run / 2 + 0.025)
+	# l'escalator, à l'arrêt la nuit : tablier strié, flancs inox, main courante noire
+	var slope := atan2(-CY, HALL_Z0 - EXIT_Z)
+	var length := Vector2(HALL_Z0 - EXIT_Z, -CY).length()
+	var ex := (ESC.x + ESC.y) / 2
+	var center := Vector3(ex, CY / 2, (HALL_Z0 + EXIT_Z) / 2)
+	add(PsxGeo.box(ESC.y - ESC.x, 0.05, length), _mat("blanc", 0x3a3c3e), center, Vector3(slope, 0, 0))
+	for i in int(length / 0.4):
+		var t := (i + 0.5) / int(length / 0.4)
+		add(PsxGeo.box(ESC.y - ESC.x - 0.1, 0.02, 0.03), M.inox, Vector3(ex, lerpf(CY, 0.0, t) + 0.03, lerpf(HALL_Z0, EXIT_Z, t)), Vector3(slope, 0, 0))
+	for bx in [ESC.x - 0.05, ESC.y + 0.05]:
+		add(PsxGeo.box(0.1, 0.9, length), M.inox, center + Vector3(bx - ex, 0.45, 0), Vector3(slope, 0, 0))
+		add(PsxGeo.box(0.12, 0.08, length), M.noir, center + Vector3(bx - ex, 0.93, 0), Vector3(slope, 0, 0))
+	# flancs carrelés de la trémie, du niveau de la place jusqu'à la salle
+	var side := PackedVector2Array([Vector2(EXIT_Z, 0.0), Vector2(HALL_Z0, 0.0), Vector2(HALL_Z0, CY)])
+	for x in [TREMIE.x, TREMIE.y]:
+		add(PsxGeo.polygon(side, 1 / TW, 1 / TH), M.carreau, Vector3(x, 0, 0), Vector3(0, -PI / 2, 0))
+	plane(M.carreau, TREMIE.y - TREMIE.x, -HALL_C, (TREMIE.x + TREMIE.y) / 2, HALL_C / 2, HALL_Z0, 0, 3, 1)   # tranche de la dalle
+
+	# collisions de la salle, des escaliers et de l'escalator
+	_solid(Vector3(w, 0.2, d), Vector3(xm, CY - 0.1, zm))
+	for x in [HALL_X0 - 0.1, HALL_X1 + 0.1]:
+		_solid(Vector3(0.2, h, d), Vector3(x, (CY + HALL_C) / 2, zm))
+	for wall_z in [[HALL_Z1 + 0.1, TUBE_X - TUBE_HW, TUBE_X + TUBE_HW], [HALL_Z0 - 0.1, TREMIE.x, TREMIE.y]]:
+		for run_x in [[HALL_X0, wall_z[1]], [wall_z[2], HALL_X1]]:
+			_solid(Vector3(run_x[1] - run_x[0], h, 0.2), Vector3((run_x[0] + run_x[1]) / 2, (CY + HALL_C) / 2, wall_z[0]))
+	_ramp(Vector3(TUBE_X, PY, TUBE_Z0), Vector3(TUBE_X, CY, HALL_Z1), 2 * TUBE_HW)
+	for sx in [-1.0, 1.0]:
+		_solid(Vector3(0.2, 4.0, TUBE_Z0 - HALL_Z1), Vector3(TUBE_X + sx * (TUBE_HW + 0.1), (PY + HALL_C) / 2, (TUBE_Z0 + HALL_Z1) / 2))
+	_ramp(Vector3(TUBE_X, CY, HALL_Z0), Vector3(TUBE_X, 0.0, EXIT_Z), sx1 - sx0)
+	_ramp(Vector3(ex, CY, HALL_Z0), Vector3(ex, 0.0, EXIT_Z), ESC.y - ESC.x)
+	_solid(Vector3(sx0 - ESC.y, 1.2, length), Vector3((ESC.y + sx0) / 2, CY / 2 + 0.6, (HALL_Z0 + EXIT_Z) / 2), Vector3(slope, 0, 0))
+	for x in [TREMIE.x - 0.1, TREMIE.y + 0.1]:
+		_solid(Vector3(0.2, 4.0, HALL_Z0 - EXIT_Z), Vector3(x, CY / 2, (HALL_Z0 + EXIT_Z) / 2))
+
+
+## Plafond en pente au-dessus d'une volée de marches, de (z0, y0) à (z1, y1), de x0 à x1.
+func _ceiling_quad(x0: float, x1: float, z0: float, y0: float, z1: float, y1: float) -> void:
+	var g := PsxGeo.empty()
+	for c in [[x0, y0, z0], [x1, y0, z0], [x0, y1, z1], [x1, y1, z1]]:
+		g.p.append(Vector3(c[0], c[1], c[2]))
+		g.n.append(Vector3.DOWN)
+		g.uv.append(Vector2(c[0] / 2.0, c[2] / 2.0))
+	g.i.append_array([0, 1, 2, 1, 3, 2])
+	add(g, M.platre, Vector3.ZERO)
+
+
+# --- La place Prosper-Goubaux et la rue de Lévis --------------------------------
+# D'après la photo de Chabe01 (Wikimedia Commons, CC BY-SA 4.0, voir CREDITS.md) : l'accès
+# s'ouvre sur le trottoir, escalier et escalator côte à côte derrière un garde-corps vert,
+# signalé par un mât au « M » jaune dans son anneau ; tout autour, des immeubles
+# haussmanniens. Le café qui ferme tard est au début de la rue de Lévis (inventé).
+
+const W0 := Vector2(-62.0, -50.0)   # coin nord-ouest du quartier (x, z)
+const W1 := Vector2(32.0, 30.0)     # coin sud-est
+const CAFE := Vector3(-25.0, 0, 10.0)   # façade du café, rue de Lévis (x de la façade, z du milieu)
+const LAMPS := [Vector2(-32.0, -17.4), Vector2(-9.0, -17.4), Vector2(2.6, -4.0), Vector2(-13.4, 14.0), Vector2(-24.6, 4.6)]
+const PLACE_TREES := [[-38.0, -12.0], [-30.0, -3.0], [-6.0, -10.0], [-4.0, 0.5], [-42.0, 2.0]]
+
+
+func _build_street() -> void:
+	# sol : trottoirs de la place et de la rue de Lévis, chaussées pavées, percés par la trémie
+	var t0 := TREMIE.x
+	var t1 := TREMIE.y
+	for y in [0.0, -0.1]:
+		var m: Material = M.trottoir if y == 0.0 else M.paves
+		var tile := 3.0 if y == 0.0 else 2.5
+		rect(m, -45.0, -18.0, t0, 4.0, y, tile)
+		rect(m, t1, -18.0, 2.0, 4.0, y, tile)
+		rect(m, t0, -18.0, t1, EXIT_Z, y, tile)
+		rect(m, t0, HALL_Z0, t1, 4.0, y, tile)
+		rect(m, -25.0, 4.0, -13.0, W1.y, y, tile)
+	rect(M.paves, W0.x, -30.0, W1.x, -18.0, -0.02, 2.5)    # boulevard de Courcelles
+	rect(M.paves, 2.0, -18.0, 14.0, W1.y, -0.02, 2.5)      # avenue de Villiers
+	rect(M.trottoir, W0.x, -18.0, -45.0, W1.y, 0.03, 3)
+	rect(M.trottoir, W0.x, W0.y, W1.x, -30.0, 0.03, 3)
+	rect(M.trottoir, 14.0, -18.0, W1.x, W1.y, 0.03, 3)
+	box(M.pierre, 47.0, 0.12, 0.15, -21.5, -0.06, -18.07, 70, 0.2)   # bordure du trottoir
+	box(M.pierre, 0.15, 0.12, 22.0, 2.07, -0.06, -7.0, 0.2, 35)
+	# immeubles
+	_block(-45, 4, -25, 30, 18, "a")
+	_block(-13, 4, 2, 30, 19, "b")
+	_block(-60, -50, -28, -31, 18, "b")
+	_block(-24, -50, 10, -31, 18, "a")
+	_block(14, -16, 32, 22, 17, "a")
+	_block(-62, -16, -46, 2, 17, "b")
+
+	# la trémie : parapet de pierre, garde-corps vert, ouverte du côté de la place (z = -10)
+	var green_rail: Material = _mat("balustrade", 0x9fd0a8, true)
+	var depth := HALL_Z0 - EXIT_Z
+	for x in [t0, t1]:
+		box(M.pierre, 0.3, 0.45, depth, x, 0.225, (EXIT_Z + HALL_Z0) / 2, depth, 0.5)
+		plane(green_rail, depth, 0.95, x, 0.93, (EXIT_Z + HALL_Z0) / 2, PI / 2, depth * 1.4, 1)
+		box(M.fonte, 0.05, 0.05, depth, x, 1.41, (EXIT_Z + HALL_Z0) / 2)
+		_solid(Vector3(0.3, 1.5, depth), Vector3(x, 0.75, (EXIT_Z + HALL_Z0) / 2))
+	box(M.pierre, t1 - t0, 0.45, 0.3, (t0 + t1) / 2, 0.225, HALL_Z0, 4, 0.5)
+	plane(green_rail, t1 - t0, 0.95, (t0 + t1) / 2, 0.93, HALL_Z0, 0, (t1 - t0) * 1.4, 1)
+	box(M.fonte, t1 - t0, 0.05, 0.05, (t0 + t1) / 2, 1.41, HALL_Z0)
+	_solid(Vector3(t1 - t0, 1.5, 0.3), Vector3((t0 + t1) / 2, 0.75, HALL_Z0))
+	# le mât au « M » jaune, à l'angle de la trémie
+	var mast := Vector3(t0 - 0.8, 0, EXIT_Z - 0.6)
+	add(PsxGeo.cylinder(0.05, 0.07, 3.4, 6), _mat("blanc", 0x8a8e90), mast + Vector3(0, 1.7, 0))
+	for r in [0.0, PI / 2]:
+		plane(_mat("mat_m", 0xffffff, true), 0.9, 0.9, mast.x, 3.85, mast.z, r)
+	_post(0.12, 3.0, mast)
+
+	# le café, au début de la rue de Lévis : vitrine éclairée, store, terrasse
+	var warm := _mat("blanc", 0xf2c27a, false, true)
+	var c := CAFE
+	box(warm, 0.04, 2.4, 6.0, c.x + 0.03, 1.5, c.z)
+	var frame := _mat("blanc", 0x3a2418)
+	for k in range(-2, 3):   # montants de la vitrine, comptoir et silhouettes derrière
+		box(frame, 0.06, 2.4, 0.08, c.x + 0.06, 1.5, c.z + k * 1.2)
+	box(_mat("blanc", 0x5a3a24), 0.05, 0.9, 5.6, c.x + 0.05, 0.75, c.z)
+	for z in [c.z - 1.6, c.z + 0.9]:
+		box(_mat("blanc", 0x2a2220), 0.03, 0.9, 0.45, c.x + 0.055, 1.65, z)
+		box(_mat("blanc", 0x2a2220), 0.03, 0.3, 0.3, c.x + 0.055, 2.25, z)
+	box(_mat("blanc", 0x3a2418), 0.06, 2.6, 0.12, c.x + 0.05, 1.5, c.z - 3.05)
+	box(_mat("blanc", 0x3a2418), 0.06, 2.6, 0.12, c.x + 0.05, 1.5, c.z + 3.05)
+	box(_mat("blanc", 0x3a2418), 0.06, 0.12, 6.2, c.x + 0.05, 2.75, c.z)
+	add(PsxGeo.box(1.4, 0.05, 6.4), _mat("blanc", 0x7a181e), Vector3(c.x + 0.7, 3.15, c.z), Vector3(0, 0, -0.35))
+	plane(_mat("cafe_levis"), 6.4, 0.8, c.x + 1.37, 2.62, c.z, PI / 2, 1, 1)
+	for k in 3:
+		var tz: float = c.z - 2.0 + k * 2.0
+		add(PsxGeo.cylinder(0.3, 0.3, 0.04, 8), _mat("blanc", 0xb8b2a6), Vector3(c.x + 1.9, 0.74, tz))
+		add(PsxGeo.cylinder(0.03, 0.03, 0.72, 4), M.fonteDark, Vector3(c.x + 1.9, 0.36, tz))
+		for dz in [-0.55, 0.55]:
+			box(_mat("blanc", 0x6a4a2a), 0.4, 0.45, 0.4, c.x + 1.9, 0.225, tz + dz)
+		_post(0.35, 0.8, Vector3(c.x + 1.9, 0, tz))
+	var cafe := Examinable.new()
+	cafe.title = "Café Le Lévis"
+	cafe.description = "Un café-brasserie encore ouvert, vitrine embuée. Derrière le comptoir, on range les chaises de la terrasse."
+	cafe.position = Vector3(c.x + 0.2, 1.5, c.z)
+	_examinable_shape(cafe, Vector3(0.3, 2.4, 6.0))
+	add_child(cafe)
+
+	# kiosque à journaux fermé, lampadaires, platanes
+	box(M.morris, 2.0, 2.2, 1.4, -6.0, 1.1, -14.0)
+	box(M.zinc, 2.4, 0.15, 1.8, -6.0, 2.28, -14.0)
+	box(_mat("blanc", 0x5a5e58), 1.7, 1.5, 0.03, -6.0, 1.15, -14.73)
+	_solid(Vector3(2.0, 2.2, 1.4), Vector3(-6.0, 1.1, -14.0))
+	for l in LAMPS:
+		add(PsxGeo.cylinder(0.06, 0.1, 4.2, 6), M.fonteDark, Vector3(l.x, 2.1, l.y))
+		add(PsxGeo.sphere(0.22, 6, 4), M.lanterne, Vector3(l.x, 4.4, l.y), Vector3.ZERO, Vector3(1, 1.25, 1))
+		_post(0.12, 3.0, Vector3(l.x, 0, l.y))
+	for i in PLACE_TREES.size():
+		_tree(PLACE_TREES[i][0], PLACE_TREES[i][1], i)
+		_post(0.35, 3.0, Vector3(PLACE_TREES[i][0], 0, PLACE_TREES[i][1]))
+
+	# collisions : sol percé par la trémie, immeubles, limites du quartier
+	_solid(Vector3(t0 - W0.x, 0.9, W1.y - W0.y), Vector3((W0.x + t0) / 2, -0.45, (W0.y + W1.y) / 2))
+	_solid(Vector3(W1.x - t1, 0.9, W1.y - W0.y), Vector3((t1 + W1.x) / 2, -0.45, (W0.y + W1.y) / 2))
+	_solid(Vector3(t1 - t0, 0.9, EXIT_Z - W0.y), Vector3((t0 + t1) / 2, -0.45, (W0.y + EXIT_Z) / 2))
+	_solid(Vector3(t1 - t0, 0.9, W1.y - HALL_Z0), Vector3((t0 + t1) / 2, -0.45, (HALL_Z0 + W1.y) / 2))
+	for b in [[-45, 4, -25, 30], [-13, 4, 2, 30], [-60, -50, -28, -31], [-24, -50, 10, -31], [14, -16, 32, 22], [-62, -16, -46, 2]]:
+		_solid(Vector3(b[2] - b[0], 20, b[3] - b[1]), Vector3((b[0] + b[2]) / 2.0, 10, (b[1] + b[3]) / 2.0))
+	for edge in [[Vector3(0.4, 6, W1.y - W0.y), Vector3(W0.x, 3, (W0.y + W1.y) / 2)], [Vector3(0.4, 6, W1.y - W0.y), Vector3(W1.x, 3, (W0.y + W1.y) / 2)],
+			[Vector3(W1.x - W0.x, 6, 0.4), Vector3((W0.x + W1.x) / 2, 3, W0.y)], [Vector3(W1.x - W0.x, 6, 0.4), Vector3((W0.x + W1.x) / 2, 3, W1.y)]]:
+		_solid(edge[0], edge[1])

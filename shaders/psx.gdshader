@@ -26,6 +26,10 @@ global uniform vec3 zone_max;
 global uniform vec3 zone2_min;
 global uniform vec3 zone2_max;
 global uniform vec3 zone2_color;
+// troisième zone (une seconde ligne en correspondance, ou une autre salle)
+global uniform vec3 zone3_min;
+global uniform vec3 zone3_max;
+global uniform vec3 zone3_color;
 global uniform vec3 fog_color;
 global uniform float fog_near;
 global uniform float fog_far;
@@ -61,6 +65,9 @@ void vertex() {
 	}
 	if (all(greaterThan(wp, zone2_min)) && all(lessThan(wp, zone2_max))) {
 		l += zone2_color * (0.6 + 0.4 * abs(n.y));
+	}
+	if (all(greaterThan(wp, zone3_min)) && all(lessThan(wp, zone3_max))) {
+		l += zone3_color * (0.6 + 0.4 * abs(n.y));
 	}
 	for (int i = 0; i < 4; i++) {
 		l += lamp(wp, n, lamp_pos_a[i].xyz, lamp_col_a[i].xyz);
