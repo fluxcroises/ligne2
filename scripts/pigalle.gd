@@ -134,9 +134,10 @@ func _build_platforms() -> void:
 	for p in [[-20.0, ZA, 0.0], [1.0 + 9.0, ZB, PI], [24.0, ZA, 0.0], [-22.0, ZB, PI], [13.0 + 13.0, ZB, PI], [-31.0, ZA, 0.0]]:
 		var poster := _mat("affiche_%d" % (k % 3))
 		poster.set_shader_parameter("emission", Vector3(0.35, 0.35, 0.35))
-		var face: float = 0.04 if p[1] == ZA else -0.04
-		box(M.inox, 3.1, 1.6, 0.04, p[0], -5.0, p[1] + face / 2)
-		plane(poster, 3.0, 1.5, p[0], -5.0, p[1] + face, p[2])
+		# l'affiche bien en avant de son cadre : les sommets tremblent, il ne doit pas la traverser
+		var face: float = 1.0 if p[1] == ZA else -1.0
+		box(M.inox, 3.1, 1.6, 0.02, p[0], -5.0, p[1] + face * 0.012)
+		plane(poster, 3.0, 1.5, p[0], -5.0, p[1] + face * 0.08, p[2])
 		k += 1
 	for x in [-30, -2, 22]:
 		plane(M.nepas, 1.1, 0.21, x, -5.5, ZB - 0.03, PI)

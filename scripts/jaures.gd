@@ -125,7 +125,8 @@ func _build_platforms() -> void:
 			plane(valance, L, 0.8, 0, PY + 3.82, ze + (0.01 if r == 0.0 else -0.01), r, L / 1.6, 1)
 		box(M.neon, L - 4, 0.04, 0.2, 0, PY + 4.18, zm)
 		for x in range(-36, 37, 6):
-			add(PsxGeo.box(0.08, 0.08, 1.8), steel, Vector3(x, PY + 3.7, zw + side[2] * 0.85), Vector3(side[2] * 0.6, 0, 0))
+			# console : part du mur et monte vers le bord de l'auvent
+			add(PsxGeo.box(0.08, 0.08, 1.8), steel, Vector3(x, PY + 3.72, zw + side[2] * 0.82), Vector3(-side[2] * 0.6, 0, 0))
 	# plaques, consignes, écrans, sièges bleus, panneaux et plans
 	for x in [-26, -12, 14, 28]:
 		plane(M.nom, 2.1, 0.52, x, PY + 1.6, ZA + 0.03, 0)
