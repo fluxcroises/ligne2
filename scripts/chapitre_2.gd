@@ -24,7 +24,7 @@ const EVIDENCE := {
 	"caisse": {"kind": "photo", "title": "Caisse d'objets d'art",
 		"text": "Dans une vieille voiture Sprague de la boucle désaffectée : une caisse neuve, « Fragile – Objets d'art », une statuette de bronze dans du papier bulle. Étiquette d'expédition : Antiquités Marchetti, rue Frochot, Paris 9e."},
 	"avis_vol": {"kind": "photo", "title": "Avis de vol",
-		"text": "Statuette de bronze, danseuse, fin du XIXe siècle, volée le 3 novembre dans un appartement du boulevard Malesherbes, avec une collection d'objets d'art. Trouvé en ligne."},
+		"text": "Volées le 3 novembre dans un appartement du boulevard Malesherbes, avec une collection d'objets d'art : une danseuse en bronze de la fin du XIXe siècle et une pendule en bronze doré. Trouvé en ligne."},
 	"ticket": {"kind": "indice", "title": "Ticket de carte bancaire",
 		"text": "Laissé au café Le Lévis par l'homme au gilet orange : quatre cafés, mardi 22 h 41, payés par la carte de « TVR Services », une société de sous-traitance ferroviaire."},
 }
@@ -135,7 +135,7 @@ const SEARCHES := [
 	]},
 	{"query": "statuette bronze volée boulevard Malesherbes", "if": "has:caisse", "results": [
 		{"author": "Le Parisien · 17e", "time": "5 novembre",
-			"text": "Cambriolage boulevard Malesherbes : une collection d'objets d'art dérobée, dont une danseuse en bronze de la fin du XIXe siècle. Aucune trace d'effraction.",
+			"text": "Cambriolage boulevard Malesherbes : une collection d'objets d'art dérobée, dont une danseuse en bronze de la fin du XIXe siècle et une pendule en bronze doré. Aucune trace d'effraction.",
 			"evidence": "avis_vol"},
 	]},
 	{"query": "TVR Services", "if": "has:ticket", "results": [

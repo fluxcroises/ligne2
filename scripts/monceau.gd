@@ -33,7 +33,7 @@ func _ready() -> void:
 	_build_street()
 	_build_entrance()
 	_build_station()
-	_build_guimard()
+	_build_guimard(Vector3(0, 0, Z0))
 	_build_totem()
 	_build_candelabra()
 	_build_rotonde()
@@ -220,22 +220,7 @@ func _build_station() -> void:
 
 
 
-# --- Bouche Guimard : arcs, lanternes, enseigne -------------------------------
-
-func _build_guimard() -> void:
-	for s in [-1.0, 1.0]:
-		add(PsxGeo.tube([Vector3(1.45 * s, 0, Z0), Vector3(1.5 * s, 1.4, Z0), Vector3(1.38 * s, 2.6, Z0),
-			Vector3(1.1 * s, 3.25, Z0), Vector3(0.9 * s, 3.32, Z0)], 10, 0.055, 5), M.fonte, Vector3.ZERO)
-		add(PsxGeo.tube([Vector3(1.5 * s, 0, Z0), Vector3(1.62 * s, 1.8, Z0), Vector3(1.68 * s, 3.3, Z0),
-			Vector3(1.5 * s, 4.0, Z0), Vector3(1.22 * s, 4.02, Z0)], 10, 0.045, 5), M.fonte, Vector3.ZERO)
-		box(M.fonteDark, 0.22, 0.32, 0.22, 1.47 * s, 0.16, Z0)
-		add(PsxGeo.sphere(0.17, 6, 4), M.lanterne, Vector3(1.2 * s, 3.84, Z0), Vector3.ZERO, Vector3(1, 1.25, 1))
-		add(PsxGeo.cone(0.2, 0.16, 5), M.fonteDark, Vector3(1.2 * s, 4.04, Z0))
-		_lanterns.append(Vector3(1.2 * s, 3.84, Z0))
-	box(M.fonte, 1.96, 0.56, 0.06, 0, 3.28, Z0)
-	plane(M.enseigne, 1.84, 0.46, 0, 3.28, Z0 - 0.035, PI)
-	plane(M.enseigne, 1.84, 0.46, 0, 3.28, Z0 + 0.035, 0)
-
+# --- Totem et candélabre -------------------------------------------------------
 
 ## Totem « M » avec le plan du quartier.
 func _build_totem() -> void:

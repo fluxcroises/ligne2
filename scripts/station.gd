@@ -685,6 +685,23 @@ func _block(x0: float, z0: float, x1: float, z1: float, h: float, facade: String
 
 
 
+## Bouche Guimard : deux arcs de fonte et leurs lanternes, l'enseigne « Métropolitain », au
+## bord haut de l'escalier (z = at.z), centrée en at.x.
+func _build_guimard(at: Vector3) -> void:
+	for s in [-1.0, 1.0]:
+		add(PsxGeo.tube([Vector3(at.x + 1.45 * s, 0, at.z), Vector3(at.x + 1.5 * s, 1.4, at.z), Vector3(at.x + 1.38 * s, 2.6, at.z),
+			Vector3(at.x + 1.1 * s, 3.25, at.z), Vector3(at.x + 0.9 * s, 3.32, at.z)], 10, 0.055, 5), M.fonte, Vector3.ZERO)
+		add(PsxGeo.tube([Vector3(at.x + 1.5 * s, 0, at.z), Vector3(at.x + 1.62 * s, 1.8, at.z), Vector3(at.x + 1.68 * s, 3.3, at.z),
+			Vector3(at.x + 1.5 * s, 4.0, at.z), Vector3(at.x + 1.22 * s, 4.02, at.z)], 10, 0.045, 5), M.fonte, Vector3.ZERO)
+		box(M.fonteDark, 0.22, 0.32, 0.22, at.x + 1.47 * s, 0.16, at.z)
+		add(PsxGeo.sphere(0.17, 6, 4), M.lanterne, Vector3(at.x + 1.2 * s, 3.84, at.z), Vector3.ZERO, Vector3(1, 1.25, 1))
+		add(PsxGeo.cone(0.2, 0.16, 5), M.fonteDark, Vector3(at.x + 1.2 * s, 4.04, at.z))
+		_lanterns.append(Vector3(at.x + 1.2 * s, 3.84, at.z))
+	box(M.fonte, 1.96, 0.56, 0.06, at.x, 3.28, at.z)
+	plane(M.enseigne, 1.84, 0.46, at.x, 3.28, at.z - 0.035, PI)
+	plane(M.enseigne, 1.84, 0.46, at.x, 3.28, at.z + 0.035, 0)
+
+
 ## Platane : tronc et deux masses de feuillage ; `i` varie la taille.
 func _tree(x: float, z: float, i: int) -> void:
 	var s := 0.9 + ((i * 37) % 5) / 12.0

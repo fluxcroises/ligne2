@@ -3,11 +3,14 @@ class_name Chapitres
 ## messages, dialogues, déductions, recherches, aides) et la scène de son lieu.
 ## Le dossier, les déductions et les recherches s'accumulent d'un chapitre à l'autre.
 
-const LAST := 2
+const LAST := 3
 
 
 static func content(n: int) -> GDScript:
-	return Chapitre2 if n == 2 else Chapitre1
+	match n:
+		2: return Chapitre2
+		3: return Chapitre3
+	return Chapitre1
 
 
 static func all(upto := LAST) -> Array[GDScript]:
@@ -18,7 +21,10 @@ static func all(upto := LAST) -> Array[GDScript]:
 
 
 static func scene(n: int) -> String:
-	return "res://scenes/villiers.tscn" if n == 2 else "res://scenes/main.tscn"
+	match n:
+		2: return "res://scenes/villiers.tscn"
+		3: return "res://scenes/pigalle.tscn"
+	return "res://scenes/main.tscn"
 
 
 static func station(n: int) -> String:

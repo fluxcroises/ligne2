@@ -63,4 +63,5 @@ func _check_end() -> void:
 	var trafic: Trafic = _station.trafic
 	var train := trafic.train_at(player.global_position) if player else null
 	if train and train.destination == "Nation" and trafic.is_moving(train):
-		_finish("Pigalle", "Le tunnel sert d'entrepôt à des objets volés, qui partent les nuits des faux trains de travaux. Karim l'avait vu et l'avait écrit à Delorme. On l'a fait taire. Franck s'est enfui.")
+		_finish("Pigalle", "Le tunnel sert d'entrepôt à des objets volés, qui partent les nuits des faux trains de travaux. Karim l'avait vu et l'avait écrit à Delorme. On l'a fait taire. Franck s'est enfui.",
+			_next_chapter)

@@ -60,6 +60,23 @@ Retenues comme modèles pour la station Villiers. Aucune n'est encore reproduite
   « M » dans un anneau, enseigne « METROPOLITAIN », candélabre « METRO ») et couloir en tube
   carrelé débouchant sur le quai (sources diverses) : modèles seulement, transmis par Lewis.
 
+### Références pour Pigalle (chapitre 3)
+
+Retenues comme modèles ; aucune n'est reproduite dans le jeu.
+
+- **Quai de la ligne 2** : « Station Pigalle Métro Paris Ligne 2 - Paris XVIII (FR75) - 2022-07-01 - 2.jpg » et « … - 6.jpg »,
+  par [Chabe01](https://commons.wikimedia.org/wiki/User:Chabe01), Wikimedia Commons,
+  licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+  <https://commons.wikimedia.org/wiki/File:Station_Pigalle_M%C3%A9tro_Paris_Ligne_2_-_Paris_XVIII_(FR75)_-_2022-07-01_-_6.jpg>
+- **Couloir, salle des billets, accès de nuit** : « Pigalle - 2026 - Couloir (1).jpg », « Pigalle - 2025 - Hall occidental 2.jpg »,
+  « Pigalle - 2025 - Accès de nuit 2.jpg », par Métroën, Wikimedia Commons, domaine public (CC0).
+  <https://commons.wikimedia.org/wiki/File:Pigalle_-_2026_-_Couloir_(1).jpg>
+- **Bouche du boulevard de Clichy** : « Accès Station Métro Pigalle Boulevard Clichy - Paris XVIII (FR75) - 2022-01-29 - 1.jpg »,
+  par Chabe01, licence CC BY-SA 4.0.
+- Affiches, néons, enseigne et vitrine de l'antiquaire (`affiche_*.png`, `neon_*.png`, `enseigne_marchetti.png`,
+  `vitrine_marchetti.png`), plaque « Pigalle » (`nom_pigalle.png`) : dessinés pour le jeu ; le Chat Rouge et
+  Antiquités Marchetti sont inventés.
+
 ### Photos de Lewis
 
 Les textures de `textures/` issues de `textures_monceau_ps1.zip` ont été tirées des photos de Lewis.
