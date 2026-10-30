@@ -77,6 +77,8 @@ func _ready() -> void:
 		_under_lamps.append(LINE3 * p)
 	for l in LAMPS:
 		_lanterns.append(Vector3(l.x, 4.4, l.y))
+	for dz in [-0.7, 0.7]:
+		_lanterns.append(Vector3(CANDELABRA.x, 6.2, CANDELABRA.y + dz))
 	_begin(2)
 	M.nom = _mat("nom_villiers")
 	M.rambarde = _mat("rambarde_villiers", 0xffffff, true)
@@ -861,29 +863,32 @@ func _ceiling_quad(x0: float, x1: float, z0: float, y0: float, z1: float, y1: fl
 const W0 := Vector2(-62.0, -50.0)   # coin nord-ouest du quartier (x, z)
 const W1 := Vector2(32.0, 30.0)     # coin sud-est
 const CAFE := Vector3(-25.0, 0, 10.0)   # façade du café, rue de Lévis (x de la façade, z du milieu)
-const LAMPS := [Vector2(-32.0, -17.4), Vector2(-9.0, -17.4), Vector2(2.6, -4.0), Vector2(-13.4, 14.0), Vector2(-24.6, 4.6)]
-const PLACE_TREES := [[-38.0, -12.0], [-30.0, -3.0], [-6.0, -10.0], [-4.0, 0.5], [-42.0, 2.0]]
+const LAMPS := [Vector2(-30.0, 1.6), Vector2(-15.0, -13.5), Vector2(15.0, -10.0), Vector2(-13.4, 14.0), Vector2(-24.6, 4.6)]
+# Au milieu de la place, d'après les photos de Mbzt (CC BY 3.0) et de Chabe01 (CC BY-SA 4.0) :
+# un terre-plein planté de platanes, un manège (bâché la nuit) et un grand candélabre à deux
+# lanternes ; tout autour, l'asphalte.
+const ISLAND := Vector3(-5.0, 0, -9.0)
+const ISLAND_R := 6.5
+const CANDELABRA := Vector2(-10.6, -9.0)
 
 
 func _build_street() -> void:
-	# sol : trottoirs de la place et de la rue de Lévis, chaussées pavées, percés par la trémie
+	# sol : trottoirs (devant les immeubles, autour de l'accès, rue de Lévis) et asphalte ;
+	# une sous-couche, percée elle aussi par la trémie, bouche les fissures entre les dalles
 	var t0 := TREMIE.x
 	var t1 := TREMIE.y
-	for y in [0.0, -0.1]:
-		var m: Material = M.trottoir if y == 0.0 else M.paves
-		var tile := 3.0 if y == 0.0 else 2.5
-		rect(m, -45.0, -18.0, t0, 4.0, y, tile)
-		rect(m, t1, -18.0, 2.0, 4.0, y, tile)
-		rect(m, t0, -18.0, t1, EXIT_Z, y, tile)
-		rect(m, t0, HALL_Z0, t1, 4.0, y, tile)
-		rect(m, -25.0, 4.0, -13.0, W1.y, y, tile)
-	rect(M.paves, W0.x, -30.0, W1.x, -18.0, -0.02, 2.5)    # boulevard de Courcelles
-	rect(M.paves, 2.0, -18.0, 14.0, W1.y, -0.02, 2.5)      # avenue de Villiers
-	rect(M.trottoir, W0.x, -18.0, -45.0, W1.y, 0.03, 3)
-	rect(M.trottoir, W0.x, W0.y, W1.x, -30.0, 0.03, 3)
-	rect(M.trottoir, 14.0, -18.0, W1.x, W1.y, 0.03, 3)
-	box(M.pierre, 47.0, 0.12, 0.15, -21.5, -0.06, -18.07, 70, 0.2)   # bordure du trottoir
-	box(M.pierre, 0.15, 0.12, 22.0, 2.07, -0.06, -7.0, 0.2, 35)
+	var asphalt := _mat("sol_goudron", 0x7a7a7e)
+	for r in [[-25.0, -14.0, t0, 0.0], [t1, -14.0, -14.0, 0.0], [t0, -14.0, t1, EXIT_Z], [t0, HALL_Z0, t1, 0.0],
+			[-45.0, 0.0, 2.0, 4.0], [-25.0, 4.0, -13.0, W1.y]]:
+		rect(M.trottoir, r[0], r[1], r[2], r[3], 0.0, 3.0)
+	for r in [[W0.x, -30.0, W1.x, -18.0], [-45.0, -18.0, -25.0, 0.0], [-25.0, -18.0, -14.0, -14.0], [-14.0, -18.0, 2.0, 0.0], [2.0, -18.0, 14.0, W1.y]]:
+		rect(asphalt, r[0], r[1], r[2], r[3], 0.0, 2.4)
+	for r in [[W0.x, W0.y, t0, W1.y], [t1, W0.y, W1.x, W1.y], [t0, W0.y, t1, EXIT_Z], [t0, HALL_Z0, t1, W1.y]]:
+		rect(M.paves, r[0], r[1], r[2], r[3], -0.1, 2.5)
+	rect(M.trottoir, W0.x, -18.0, -45.0, W1.y, 0.0, 3)
+	rect(M.trottoir, W0.x, W0.y, W1.x, -30.0, 0.0, 3)
+	rect(M.trottoir, 14.0, -18.0, W1.x, W1.y, 0.0, 3)
+	_build_island()
 	# immeubles
 	_block(-45, 4, -25, 30, 18, "a")
 	_block(-13, 4, 2, 30, 19, "b")
@@ -925,7 +930,7 @@ func _build_street() -> void:
 	box(_mat("blanc", 0x3a2418), 0.06, 2.6, 0.12, c.x + 0.05, 1.5, c.z - 3.05)
 	box(_mat("blanc", 0x3a2418), 0.06, 2.6, 0.12, c.x + 0.05, 1.5, c.z + 3.05)
 	box(_mat("blanc", 0x3a2418), 0.06, 0.12, 6.2, c.x + 0.05, 2.75, c.z)
-	add(PsxGeo.box(1.4, 0.05, 6.4), _mat("blanc", 0x7a181e), Vector3(c.x + 0.7, 3.15, c.z), Vector3(0, 0, -0.35))
+	add(PsxGeo.uv_scale(PsxGeo.box(1.4, 0.05, 6.4), 1, 6), _mat("toile_rayee"), Vector3(c.x + 0.7, 3.15, c.z), Vector3(0, 0, -0.35))
 	plane(_mat("cafe_levis"), 6.4, 0.8, c.x + 1.37, 2.62, c.z, PI / 2, 1, 1)
 	for k in 3:
 		var tz: float = c.z - 2.0 + k * 2.0
@@ -950,9 +955,8 @@ func _build_street() -> void:
 		add(PsxGeo.cylinder(0.06, 0.1, 4.2, 6), M.fonteDark, Vector3(l.x, 2.1, l.y))
 		add(PsxGeo.sphere(0.22, 6, 4), M.lanterne, Vector3(l.x, 4.4, l.y), Vector3.ZERO, Vector3(1, 1.25, 1))
 		_post(0.12, 3.0, Vector3(l.x, 0, l.y))
-	for i in PLACE_TREES.size():
-		_tree(PLACE_TREES[i][0], PLACE_TREES[i][1], i)
-		_post(0.35, 3.0, Vector3(PLACE_TREES[i][0], 0, PLACE_TREES[i][1]))
+	_tree(-42.0, 2.0, 0)
+	_post(0.35, 3.0, Vector3(-42.0, 0, 2.0))
 
 	# collisions : sol percé par la trémie, immeubles, limites du quartier
 	_solid(Vector3(t0 - W0.x, 0.9, W1.y - W0.y), Vector3((W0.x + t0) / 2, -0.45, (W0.y + W1.y) / 2))
@@ -998,3 +1002,42 @@ func franck_escape() -> Array[Vector3]:
 		var q := _boucle_point(deg_to_rad(deg), 2.05)
 		out.append(LINE3 * Vector3(q.x, PY, q.y))
 	return out
+
+
+## Le terre-plein du milieu de la place : bordure, platanes, manège bâché, candélabre.
+func _build_island() -> void:
+	var c := ISLAND
+	var outline := PackedVector2Array()
+	for i in 16:
+		var a := TAU * i / 16
+		outline.append(Vector2(c.x + ISLAND_R * cos(a), c.z + ISLAND_R * sin(a)))
+	add(PsxGeo.polygon(outline, 1 / 3.0, 1 / 3.0), M.trottoir, Vector3(0, 0.02, 0), Vector3(PI / 2, 0, 0))
+	add(PsxGeo.uv_scale(PsxGeo.cylinder(ISLAND_R, ISLAND_R, 0.12, 16, 1, true), 20, 0.2), M.pierre, c + Vector3(0, 0.04, 0))
+	for i in 5:
+		var a := TAU * i / 5 + 0.4
+		var p := Vector2(c.x + 4.9 * cos(a), c.z + 4.9 * sin(a))
+		_tree(p.x, p.y, i + 1)
+		_post(0.35, 3.0, Vector3(p.x, 0, p.y))
+	# le manège, bâché pour la nuit
+	var wood := _mat("blanc", 0x6a4a30)
+	var tarp := _mat("blanc", 0xb8ae96)
+	var stripes := _mat("toile_rayee")
+	add(PsxGeo.cylinder(3.2, 3.2, 0.45, 12), wood, c + Vector3(0, 0.25, 0))
+	add(PsxGeo.uv_scale(PsxGeo.cylinder(3.05, 3.1, 2.5, 12, 1, true), 6, 1), tarp, c + Vector3(0, 1.7, 0))
+	add(PsxGeo.uv_scale(PsxGeo.cone(3.7, 1.5, 12), 12, 1), stripes, c + Vector3(0, 3.7, 0))
+	add(PsxGeo.uv_scale(PsxGeo.cylinder(3.7, 3.7, 0.35, 12, 1, true), 24, 1), stripes, c + Vector3(0, 2.95, 0))
+	add(PsxGeo.sphere(0.2, 6, 4), _mat("blanc", 0xd8b040), c + Vector3(0, 4.6, 0))
+	_post(3.3, 3.0, c)
+	var carousel := Examinable.new()
+	carousel.title = "Manège"
+	carousel.description = "Un manège de chevaux de bois, bâché pour la nuit. Une pancarte : « Fermé ». Sous la bâche, on devine les chevaux immobiles."
+	carousel.position = c + Vector3(0, 1.5, 0)
+	_examinable_shape(carousel, Vector3(6.4, 3.0, 6.4))
+	add_child(carousel)
+	# le grand candélabre à deux lanternes
+	var k := CANDELABRA
+	add(PsxGeo.cylinder(0.08, 0.16, 6.0, 6), M.fonteDark, Vector3(k.x, 3.0, k.y))
+	add(PsxGeo.box(0.06, 0.06, 1.5), M.fonteDark, Vector3(k.x, 6.0, k.y))
+	for dz in [-0.7, 0.7]:
+		add(PsxGeo.sphere(0.24, 6, 4), M.lanterne, Vector3(k.x, 6.2, k.y + dz), Vector3.ZERO, Vector3(1, 1.25, 1))
+	_post(0.18, 3.0, Vector3(k.x, 0, k.y))

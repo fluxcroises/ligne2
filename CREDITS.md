@@ -40,6 +40,15 @@ Retenues comme modèles pour la station Villiers. Aucune n'est encore reproduite
   par freeside510, Wikimedia Commons, licence [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/).
   <https://commons.wikimedia.org/wiki/File:Vintage_Sprague_rolling_stock_in_a_disused_tunnel_inside_the_Paris_Metro_system,_2014.jpg>
   Sert de modèle à la boucle de `scripts/villiers.gd` et à `sprague_cote.png`, dessinée d'après elle.
+- **Place Prosper-Goubaux** : « P1140440 Paris VIII-XVII place Prosper-Goubaux rwk.jpg », par Mbzt,
+  licence [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/),
+  <https://commons.wikimedia.org/wiki/File:P1140440_Paris_VIII-XVII_place_Prosper-Goubaux_rwk.jpg>, et
+  « Place Prosper Goubaux - Paris VIII (FR75) - 2021-08-22 - 1.jpg », par
+  [Chabe01](https://commons.wikimedia.org/wiki/User:Chabe01), licence
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/),
+  <https://commons.wikimedia.org/wiki/File:Place_Prosper_Goubaux_-_Paris_VIII_(FR75)_-_2021-08-22_-_1.jpg>.
+  Modèles du terre-plein (platanes, manège, candélabre), de l'asphalte et des stores rayés
+  (`toile_rayee.png`, dessinée).
 - Photo de quai avec la plaque « Villiers » et l'escalier à rambarde (© RATP – Bruno Marguerite)
   et photo d'un plan de ligne « Nation par Barbès – Rochechouart » (source inconnue) :
   modèles seulement, transmis par Lewis ; ils ne seront jamais reproduits.
