@@ -31,8 +31,9 @@ static func stations_towards(from: String, terminus: String) -> Array[String]:
 	return names.slice(names.find(from))
 
 
-## Panneau de direction : une rangée par élément de `rows`, chacune ["ligne", terminus] ou
-## ["sortie", texte]. 96 px de large, 16 px par rangée.
+## Panneau de direction : une rangée par élément de `rows`, chacune ["ligne", terminus],
+## ["ligne3", texte] (correspondance avec la ligne 3) ou ["sortie", texte].
+## 96 px de large, 16 px par rangée.
 static func direction(parent: Node, rows: Array) -> ViewportTexture:
 	var vp := _viewport(parent, Vector2i(96, 16 * rows.size()))
 	for i in rows.size():
@@ -45,8 +46,12 @@ static func direction(parent: Node, rows: Array) -> ViewportTexture:
 			_rect(vp, Color.WHITE, Rect2(0, y, 96, 16))
 			_rect(vp, NAVY, Rect2(0, y, 96, 1))
 			_metro(vp, Vector2(8, y + 8.5), 6)
-			_line_disc(vp, Vector2(21, y + 8.5), 6)
-			_text(vp, rows[i][1], NAVY, 9 if rows[i][1].length() <= 8 else 8, Vector2(29, y + 1), true)
+			if rows[i][0] == "ligne3":
+				_line_disc(vp, Vector2(21, y + 8.5), 6, "3", Color(LINE_COLORS["3"]))
+			else:
+				_line_disc(vp, Vector2(21, y + 8.5), 6)
+			var size := 9 if rows[i][1].length() <= 8 else (8 if rows[i][1].length() <= 11 else 6)
+			_text(vp, rows[i][1], NAVY, size, Vector2(29, y + 1 + (9 - size) / 2.0), true)
 			_arrow(vp, NAVY, Vector2(81, y + 3))
 	return vp.get_texture()
 
@@ -95,29 +100,80 @@ static func mf01_front(parent: Node, destination: String, number: String) -> Vie
 	return vp.get_texture()
 
 
-## Plan de ligne d'un quai : en-tête (Ⓜ ② terminus →), stations jusqu'au terminus,
-## la station courante en surbrillance, bande bleu nuit en bas. 72 × 128 px.
+## Plan de ligne d'un quai, d'après une photo prise comme modèle : en-tête blanc (← Ⓜ ②
+## terminus, « par » la station repère), puis les stations de la station courante (encadrée
+## en bleu nuit) au terminus, les correspondances en pastilles à gauche, bande bleu nuit en bas.
+## 96 × 128 px (0,96 × 1,28 m au mur).
+const LINE_PLAN_SIZE := Vector2i(96, 128)
+## Couleurs des lignes de correspondance (charte IDFM).
+const LINE_COLORS := {"1": "#ffcd00", "3": "#9f9825", "4": "#be418d", "5": "#ff7e2e", "6": "#6eca97",
+	"7": "#fa9aba", "7bis": "#6eca97", "9": "#b6bd00", "11": "#704b1c", "12": "#007852", "13": "#6ec4e8"}
+## Station repère affichée sous le terminus (« Nation par Barbès – Rochechouart »).
+const VIA := {"Nation": "par Barbès – Rochechouart"}
+
+
 static func line_plan(parent: Node, from: String, terminus: String) -> ViewportTexture:
-	var vp := _viewport(parent, Vector2i(72, 128))
-	_rect(vp, PANEL_BEIGE, Rect2(0, 0, 72, 128))
-	_rect(vp, Color.WHITE, Rect2(0, 0, 72, 14))
-	_rect(vp, NAVY, Rect2(0, 0, 72, 1))
-	_metro(vp, Vector2(7, 7.5), 5)
-	_line_disc(vp, Vector2(18, 7.5), 5)
+	var vp := _viewport(parent, LINE_PLAN_SIZE)
+	var w := LINE_PLAN_SIZE.x
+	_rect(vp, PANEL_BEIGE, Rect2(0, 0, w, 128))
+	_rect(vp, Color.WHITE, Rect2(0, 0, w, 16))
+	_rect(vp, NAVY, Rect2(0, 0, w, 1))
+	_rect(vp, Color("#c8c4b6"), Rect2(0, 16, w, 1))
+	_back_arrow(vp, NAVY, Vector2(1, 3.5))
+	_metro(vp, Vector2(21, 8.5), 5)
+	_line_disc(vp, Vector2(32, 8.5), 5)
 	var title := "Pte Dauphine" if terminus == "Porte Dauphine" else terminus
-	_text(vp, title, NAVY, 8 if title.length() <= 8 else 7, Vector2(25, 1), true)
+	_text(vp, title, NAVY, 8, Vector2(39, -1), true)
+	if VIA.has(terminus):
+		_text(vp, VIA[terminus], NAVY, 4, Vector2(39, 9), false)
 	var stations := stations_towards(from, terminus)
-	var step := minf(9.0, 100.0 / stations.size())
-	var y0 := 20.0
-	_rect(vp, NAVY, Rect2(13, y0, 2, step * (stations.size() - 1)))
+	var step := minf(8.0, 100.0 / stations.size())
+	var y0 := 22.0
+	var lx := 42.0
+	_rect(vp, LINE_2_BLUE, Rect2(lx - 1, y0, 2, step * (stations.size() - 1)))
 	for i in stations.size():
 		var y := y0 + step * i
-		_disc(vp, Color.WHITE, NAVY, Vector2(14, y), 2)
-		if stations[i] == from:
-			_rect(vp, NAVY, Rect2(18, y - 3, 44, 6))
-		_text(vp, stations[i], Color.WHITE if stations[i] == from else NAVY, 5, Vector2(19, y - 4.5), false)
-	_rect(vp, NAVY, Rect2(0, 122, 72, 6))
+		var name := stations[i]
+		var connections := connections_of(name)
+		if connections.is_empty():
+			_disc(vp, LINE_2_BLUE, Color.TRANSPARENT, Vector2(lx, y), 1.5)
+		else:
+			_disc(vp, Color.WHITE, NAVY, Vector2(lx, y), 1.8)
+		_connection_icons(vp, connections, Vector2(lx - 5, y))
+		if name == from:
+			_rect(vp, NAVY, Rect2(lx + 4, y - 3, 48, 6))
+		_text(vp, name, Color.WHITE if name == from else NAVY, 5, Vector2(lx + 5, y - 4.5), name == from)
+	_rect(vp, NAVY, Rect2(0, 122, w, 6))
 	return vp.get_texture()
+
+
+## Correspondances d'une station, une par élément (« M3 », « RER A »…).
+static func connections_of(station: String) -> Array[String]:
+	var out: Array[String] = []
+	for s in LINE_2:
+		if s[0] == station and s[1] != "":
+			for part in s[1].split(","):
+				var t: String = part.strip_edges()
+				if t.begins_with("M") or t.begins_with("RER "):
+					out.append(t)
+				elif t.length() == 1:   # « RER B, D, E » : les lettres suivantes sont aussi des RER
+					out.append("RER " + t)
+	return out
+
+
+## Pastilles des correspondances, alignées à droite sur `right` (Ⓜ et couleur de ligne, ou RER).
+static func _connection_icons(parent: Node, connections: Array[String], right: Vector2) -> void:
+	var x := right.x - 3
+	for i in range(connections.size() - 1, -1, -1):
+		var t: String = connections[i]
+		if t.begins_with("RER"):
+			_disc(parent, Color.WHITE, Color("#e2231a"), Vector2(x, right.y), 3)
+			_centered(parent, t.substr(4), Color("#e2231a"), Vector2(x, right.y), 3)
+		else:
+			var n := t.substr(1)
+			_disc(parent, Color(LINE_COLORS.get(n, "#888888")), Color.TRANSPARENT, Vector2(x, right.y), 3)
+			_centered(parent, n, Color.BLACK if n in ["1", "5", "9", "13", "7", "6", "7bis"] else Color.WHITE, Vector2(x, right.y), 3)
+		x -= 7
 
 
 ## Description lisible d'un plan de ligne, pour l'examen.
@@ -129,7 +185,7 @@ static func line_plan_text(from: String, terminus: String) -> String:
 			if s[0] == name:
 				connections = s[1]
 		parts.append(name + (" (%s)" % connections if connections != "" else ""))
-	return "Ligne 2, direction %s. Après Monceau : %s." % [terminus, ", ".join(parts)]
+	return "Ligne 2, direction %s. Après %s : %s." % [terminus, from, ", ".join(parts)]
 
 
 # --- Dessin --------------------------------------------------------------------
@@ -180,9 +236,9 @@ static func _metro(parent: Node, center: Vector2, radius: float) -> void:
 	_centered(parent, "M", NAVY, center, radius)
 
 
-static func _line_disc(parent: Node, center: Vector2, radius: float) -> void:
-	_disc(parent, LINE_2_BLUE, Color.TRANSPARENT, center, radius)
-	_centered(parent, "2", Color.WHITE, center, radius)
+static func _line_disc(parent: Node, center: Vector2, radius: float, number := "2", color := LINE_2_BLUE) -> void:
+	_disc(parent, color, Color.TRANSPARENT, center, radius)
+	_centered(parent, number, Color.WHITE, center, radius)
 
 
 static func _centered(parent: Node, s: String, color: Color, center: Vector2, radius: float) -> void:
@@ -190,6 +246,16 @@ static func _centered(parent: Node, s: String, color: Color, center: Vector2, ra
 	l.size = Vector2(radius, radius) * 2
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+## Flèche « ← » de 13 × 10 px (en-tête des plans de ligne).
+static func _back_arrow(parent: Node, color: Color, pos: Vector2) -> void:
+	var poly := Polygon2D.new()
+	poly.color = color
+	poly.position = pos
+	poly.polygon = PackedVector2Array([Vector2(13, 4), Vector2(5, 4), Vector2(5, 1), Vector2(0, 5),
+		Vector2(5, 9), Vector2(5, 6), Vector2(13, 6)])
+	parent.add_child(poly)
 
 
 ## Flèche « → » de 11 × 10 px.

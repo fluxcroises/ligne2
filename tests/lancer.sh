@@ -7,7 +7,7 @@ GODOT=${GODOT:-godot}
 export CAPTURES=${CAPTURES:-/tmp/ligne2_captures}
 mkdir -p "$CAPTURES"
 cd "$(dirname "$0")/.."
-for t in ${1:-souris parcours telephone dialogues chapitre_1 menus}; do
+for t in ${1:-souris parcours villiers telephone dialogues chapitre_1 menus}; do
 	echo "== $t"
 	xvfb-run -a -s "-screen 0 1280x960x24" "$GODOT" --path . --rendering-driver opengl3 -s "tests/$t.gd" 2>&1 \
 		| grep -vE "ALSA|alsa|audio|V-Sync|vsync|^\s+at:|^$|OpenGL|Godot Engine|status < 0|leaked"

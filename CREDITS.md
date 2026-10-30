@@ -60,9 +60,12 @@ Le lettrage de `plaque.png` a été extrait de sa photo de l'enseigne de Monceau
 - Station Monceau (quais de 75 m, sièges verts « Motte », salle de distribution des billets) :
   article Wikipédia « Monceau (métro de Paris) », licence CC BY-SA 4.0.
 
-## Police
+## Polices
 
-- [VT323](https://fonts.google.com/specimen/VT323), par Peter Hull, licence SIL Open Font License 1.1
+- Lettrage de la plaque « Villiers » (`nom_villiers.png`) : DejaVu Sans Bold, licence libre
+  Bitstream Vera / DejaVu.
+
+- Interface : [VT323](https://fonts.google.com/specimen/VT323), par Peter Hull, licence SIL Open Font License 1.1
   (`fonts/OFL.txt`).
 
 ## Logiciels

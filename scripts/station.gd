@@ -239,14 +239,14 @@ func _build_tracks() -> void:
 			box(M.rail, L + 220, 0.14, 0.08, 0, RY + 0.07, c + o)
 
 
-## Voûte, murs de tête, tunnels et rampes de néons.
-func _build_shell() -> void:
+## Voûte, murs de tête, tunnels et, si `ramps`, les rampes de néons au-dessus des bords de quai.
+func _build_shell(ramps := true) -> void:
 	_build_vault()
 	for sx in [-1.0, 1.0]:
 		_build_tympan_and_tunnel(sx)
 
 	# rampes de néons
-	for z in [23.2, 30.8]:
+	for z in ([23.2, 30.8] if ramps else []):
 		box(M.neon, L - 2, 0.1, 0.26, 0, -1.6, z)
 		box(M.inox, L - 2, 0.06, 0.36, 0, -1.52, z)
 
@@ -425,3 +425,175 @@ func _platform_end_colliders(zw: float, ze: float, inward: float) -> CollisionSh
 		var gap := HALF - MF01.HALF_LENGTH + 0.3
 		_solid(Vector3(gap, 2.0, 0.1), Vector3(sx * (HALF - gap / 2), PY + 1.0, ze - inward * 0.3))
 	return _solid(Vector3(MF01.HALF_LENGTH * 2, 2.0, 0.1), Vector3(0, PY + 1.0, ze - inward * 0.3))
+
+
+# --- Passage sous les voies ----------------------------------------------------
+# Sur chaque quai, un escalier longe le mur et descend vers +x jusqu'à un passage qui file
+# sous les voies d'un quai à l'autre. `u` décrit ce passage :
+#   x0, x1   haut et bas des escaliers ;  x2  mur du fond du passage ;  w  largeur des escaliers ;
+#   floor, ceil   sol et plafond du passage ;
+#   rail, rail_h, rail_tile   garde-corps de la trémie (matériau, hauteur, largeur d'un motif) ;
+#   top_rail  lisse posée sur le garde-corps (ou null) ;  curb  bordure carrelée (ou null) ;
+#   risers  fresque peinte sur les contremarches (ou null) ;  frieze, plinth  habillage du passage.
+
+## Hauteur d'une marche (15 marches du quai au passage).
+static func _underpass_step(u: Dictionary) -> float:
+	return (PY - u.floor) / 15.0
+
+
+## Naissance de la voûte du passage.
+static func _underpass_spring(u: Dictionary) -> float:
+	return u.ceil - 0.45
+
+
+func _build_underpass(u: Dictionary) -> void:
+	var step := _underpass_step(u)
+	var spring := _underpass_spring(u)
+	var x0: float = u.x0
+	var x1: float = u.x1
+	var x2: float = u.x2
+	var w: float = u.w
+	var floor_y: float = u.floor
+	for well in [[ZA, 1.0], [ZB, -1.0]]:
+		var zw: float = well[0]          # mur du quai
+		var inward: float = well[1]      # sens du mur vers les voies
+		var zc := zw + inward * w / 2    # axe de l'escalier
+		var zi := zw + inward * w        # bord de la trémie côté voies
+		# marches grises à nez en inox, bande d'éveil en haut
+		for i in 15:
+			var top := PY - (i + 1) * step
+			var x := x0 + i * 0.5 + 0.25
+			box(M.marche, 0.5, top - floor_y + 0.3, w, x, (top + floor_y - 0.3) / 2, zc, 1, 2)
+			box(M.inox, 0.05, 0.02, w, x - 0.225, top + 0.01, zc)
+			if u.risers:
+				# une bande de la fresque par contremarche, pour qu'elle se lise depuis le bas
+				var g := PsxGeo.plane(w, step, 2, 1)
+				for k in g.uv.size():
+					g.uv[k] = Vector2(g.uv[k].x, (i + g.uv[k].y) / 15.0)
+				add(g, u.risers, Vector3(x0 + i * 0.5 + 0.005, top + step / 2, zc), Vector3(0, PI / 2, 0))
+		rect(M.bande, x0 - 0.6, minf(zw, zi), x0, maxf(zw, zi), PY + 0.006, 0.55)
+		plane(M.marche, w, step + 0.02, x0, PY - step / 2, zc, PI / 2, 1, 0.3)   # contremarche du haut
+		# murs de la trémie : carreaux
+		var depth := PY - floor_y
+		for z in [zw, zi]:
+			plane(M.carreau, x1 - x0, depth, (x0 + x1) / 2, (PY + floor_y) / 2, z - inward * 0.01 * signf(z - zc), 0, (x1 - x0) / TW, depth / TH)
+		plane(M.carreau, w, PY - spring, x1, (PY + spring) / 2, zc, PI / 2, w / TW, (PY - spring) / TH)   # bout de la dalle
+		# main courante le long du mur
+		var rail_len := Vector2(x1 - x0, depth).length()
+		add(PsxGeo.box(rail_len, 0.04, 0.04), M.candPost, Vector3((x0 + x1) / 2, (PY + floor_y) / 2 + 0.9, zw + inward * 0.06),
+			Vector3(0, 0, -atan2(depth, x1 - x0)))
+		# bordure et garde-corps autour de la trémie
+		var base := PY
+		if u.curb:
+			box(u.curb, x1 - x0, 0.22, 0.2, (x0 + x1) / 2, PY + 0.11, zi + inward * 0.1, (x1 - x0) / 0.6, 1)
+			box(u.curb, 0.2, 0.22, w + 0.2, x1 + 0.1, PY + 0.11, zc + inward * 0.1, 1, (w + 0.2) / 0.6)
+			base = PY + 0.22
+		var rh: float = u.rail_h
+		plane(u.rail, x1 - x0, rh, (x0 + x1) / 2, base + rh / 2, zi, 0, (x1 - x0) / u.rail_tile, 1)
+		plane(u.rail, w, rh, x1, base + rh / 2, zc, PI / 2, w / u.rail_tile, 1)
+		if u.top_rail:
+			box(u.top_rail, x1 - x0, 0.05, 0.05, (x0 + x1) / 2, base + rh, zi)
+			box(u.top_rail, 0.05, 0.05, w, x1, base + rh, zc)
+
+	# le passage : murs carrelés, frise, plinthe, voûte blanche, sol gris foncé
+	var mid := (ZA + ZB) / 2
+	var wall_h := spring - floor_y
+	rect(M.sol, x1, ZA, x2, ZB, floor_y, 2.4)
+	for wall in [[x2, ZB - ZA, mid], [x1, ZB - ZA - 2 * w, mid]]:
+		var x: float = wall[0]
+		var length: float = wall[1]
+		plane(M.carreau, length, wall_h, x, (floor_y + spring) / 2, wall[2], PI / 2, length / TW, wall_h / TH)
+		plane(u.frieze, length, 0.14, x + (0.01 if x < x2 else -0.01), spring - 0.07, wall[2], PI / 2, length / 0.6, 1)
+		plane(u.plinth, length, 0.2, x + (0.01 if x < x2 else -0.01), floor_y + 0.1, wall[2], PI / 2, length / 0.6, 1)
+	for z in [ZA, ZB]:
+		plane(M.carreau, x2 - x1, u.ceil - floor_y, (x1 + x2) / 2, (u.ceil + floor_y) / 2, z, 0, (x2 - x1) / TW, (u.ceil - floor_y) / TH)
+	_build_underpass_vault(u)
+	box(M.neon, 0.15, 0.05, ZB - ZA - 2, (x1 + x2) / 2, u.ceil - 0.03, mid)
+
+
+## Voûte surbaissée du passage, d'un mur à l'autre, sur toute sa longueur.
+func _build_underpass_vault(u: Dictionary) -> void:
+	var spring := _underpass_spring(u)
+	var g := PsxGeo.empty()
+	var n_arc := 8
+	var n_len := 14
+	var cx: float = (u.x1 + u.x2) / 2
+	var half: float = (u.x2 - u.x1) / 2
+	for i in n_arc + 1:
+		var t := PI * i / n_arc
+		var x := cx + half * cos(t)
+		var y: float = spring + (u.ceil - spring) * sin(t)
+		for j in n_len + 1:
+			var z := ZA + (ZB - ZA) * j / n_len
+			g.p.append(Vector3(x, y, z))
+			g.n.append(Vector3(-cos(t), -sin(t), 0))
+			g.uv.append(Vector2(z / 2.0, float(i) / n_arc))
+	for i in n_arc:
+		for j in n_len:
+			var a := i * (n_len + 1) + j
+			var b := a + n_len + 1
+			g.i.append_array([a, b, a + 1, b, b + 1, a + 1])
+	add(g, M.platre, Vector3.ZERO)
+
+
+## Sols des deux quais, percés par les trémies des escaliers du passage.
+func _build_platform_floors(u: Dictionary) -> void:
+	rect(M.sol, X0, ZA, u.x0, ZT0 - 0.55, PY, 2.4)
+	rect(M.sol, u.x1, ZA, X1, ZT0 - 0.55, PY, 2.4)
+	rect(M.sol, u.x0, ZA + u.w, u.x1, ZT0 - 0.55, PY, 2.4)
+	rect(M.sol, X0, ZT1 + 0.55, u.x0, ZB, PY, 2.4)
+	rect(M.sol, u.x1, ZT1 + 0.55, X1, ZB, PY, 2.4)
+	rect(M.sol, u.x0, ZT1 + 0.55, u.x1, ZB - u.w, PY, 2.4)
+
+
+## Collisions des deux quais et du passage ; `openings` : ouvertures [x0, x1] dans le mur de
+## chaque quai ([quai A, quai B]). Renvoie les garde-fous des deux voies.
+func _platform_colliders(u: Dictionary, openings: Array) -> Array[CollisionShape3D]:
+	var x0: float = u.x0
+	var x1: float = u.x1
+	var w: float = u.w
+	var floor_y: float = u.floor
+	var barriers: Array[CollisionShape3D] = []
+	var q := 0
+	for quai in [[ZA, ZT0, 1.0], [ZB, ZT1, -1.0]]:
+		var zw: float = quai[0]       # mur du quai
+		var ze: float = quai[1]       # bord du quai
+		var inward: float = quai[2]   # sens du mur vers les voies
+		var zi := zw + inward * w
+		var depth := absf(ze - zw)
+		_solid(Vector3(x0 - X0, 0.2, depth), Vector3((X0 + x0) / 2, PY - 0.1, (zw + ze) / 2))
+		_solid(Vector3(X1 - x1, 0.2, depth), Vector3((x1 + X1) / 2, PY - 0.1, (zw + ze) / 2))
+		_solid(Vector3(x1 - x0, 0.2, absf(ze - zi)), Vector3((x0 + x1) / 2, PY - 0.1, (zi + ze) / 2))
+		# mur du quai, interrompu par ses ouvertures
+		var start := X0
+		var holes: Array = openings[q] + [[X1, X1]]
+		for hole in holes:
+			if hole[0] > start:
+				_solid(Vector3(hole[0] - start, WT - floor_y, 0.2), Vector3((start + hole[0]) / 2, (floor_y + WT) / 2, zw - inward * 0.1))
+			start = hole[1]
+		barriers.append(_platform_end_colliders(zw, ze, inward))
+		# trémie de l'escalier : garde-corps, mur côté voies, rampe
+		_solid(Vector3(x1 - x0, 1.1, 0.06), Vector3((x0 + x1) / 2, PY + 0.55, zi))
+		_solid(Vector3(0.06, 1.1, w), Vector3(x1, PY + 0.55, zw + inward * w / 2))
+		_solid(Vector3(x1 - x0, PY - floor_y, 0.2), Vector3((x0 + x1) / 2, (PY + floor_y) / 2, zi + inward * 0.1))
+		_ramp(Vector3(x0, PY, zw + inward * w / 2), Vector3(x1, floor_y, zw + inward * w / 2), w)
+		q += 1
+	# passage sous les voies
+	_solid(Vector3(u.x2 - x1, 0.2, ZB - ZA), Vector3((x1 + u.x2) / 2, floor_y - 0.1, (ZA + ZB) / 2))
+	_solid(Vector3(0.2, u.ceil - floor_y, ZB - ZA), Vector3(u.x2 + 0.1, (floor_y + u.ceil) / 2, (ZA + ZB) / 2))
+	_solid(Vector3(0.2, u.ceil - floor_y, ZB - ZA - 2 * w), Vector3(x1 - 0.1, (floor_y + u.ceil) / 2, (ZA + ZB) / 2))
+	return barriers
+
+
+## Plan de la ligne 2 au mur, examinable : de `from` vers `terminus`.
+func _line_plan(from: String, terminus: String, pos: Vector3, ry: float) -> void:
+	var m := _sign_from_texture(Panneaux.line_plan(self, from, terminus))
+	var size := Vector2(Panneaux.LINE_PLAN_SIZE) / 100.0
+	plane(m, size.x, size.y, pos.x, pos.y, pos.z, ry)
+	var item := Examinable.new()
+	item.title = "Plan de la ligne 2"
+	item.description = Panneaux.line_plan_text(from, terminus)
+	item.position = pos
+	var depth := Vector3(0.15, size.y, size.x) if absf(sin(ry)) > 0.5 else Vector3(size.x, size.y, 0.15)
+	_examinable_shape(item, depth)
+	add_child(item)
