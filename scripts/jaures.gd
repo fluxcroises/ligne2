@@ -156,15 +156,20 @@ func _build_hall() -> void:
 	var u := _underpass()
 	var brick := _mat("brique")
 	# le bâtiment de brique sous la station, d'une pile de pierre à l'autre
-	for z in [ZA - 0.02, ZB + 0.02]:
+	# la façade a l'épaisseur d'un mur : à 2 cm, elle transperçait le carrelage de l'intérieur
+	var t := 0.25
+	for z in [ZA - t, ZB + t]:
 		for run in ([[-HALF, ENTRY.x], [ENTRY.y, HALF]] if z < CZ else [[-HALF, HALF]]):
 			var length: float = run[1] - run[0]
 			plane(brick, length, 5.4, (run[0] + run[1]) / 2, 2.7, z, 0.0 if z < CZ else PI, length / 1.6, 5.4 / 1.6)
-	plane(brick, ENTRY.y - ENTRY.x, 5.4 - 2.6, (ENTRY.x + ENTRY.y) / 2, 4.0, ZA - 0.02, 0, 2, 2)   # au-dessus de la porte
+	plane(brick, ENTRY.y - ENTRY.x, 5.4 - 2.6, (ENTRY.x + ENTRY.y) / 2, 4.0, ZA - t, 0, 2, 2)   # au-dessus de la porte
+	for x in [ENTRY.x, ENTRY.y]:   # tableau de la porte, dans l'épaisseur du mur
+		plane(brick, t, 2.6, x, 1.3, ZA - t / 2, PI / 2, 0.2, 1.6)
+	box(brick, ENTRY.y - ENTRY.x, 0.05, t, (ENTRY.x + ENTRY.y) / 2, 2.6, ZA - t / 2, 2, 0.2)
 	# le bandeau Ⓜ ② ⑤ ⑦bis au-dessus de l'entrée, les portes vitrées ouvertes
 	var sigle := _mat("sigle_jaures")
 	sigle.set_shader_parameter("emission", Vector3(0.5, 0.5, 0.5))
-	plane(sigle, 4.4, 1.1, (ENTRY.x + ENTRY.y) / 2, 3.2, ZA - 0.06, PI)
+	plane(sigle, 4.4, 1.1, (ENTRY.x + ENTRY.y) / 2, 3.2, ZA - t - 0.06, PI)
 	for x in [ENTRY.x + 0.05, ENTRY.y - 0.05]:
 		box(M.inox, 0.1, 2.6, 0.12, x, 1.3, ZA)
 	# dedans : sol, murs carrelés, plafond percé par les escaliers, néons

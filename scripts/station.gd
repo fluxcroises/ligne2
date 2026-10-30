@@ -522,8 +522,9 @@ func _build_underpass(u: Dictionary) -> void:
 		for i in n:
 			var top := PY - (i + 1) * step
 			var x := x0 + i * run + run / 2
-			box(M.marche, run, top - floor_y + 0.3, w, x, (top + floor_y - 0.3) / 2, zc, 1, 2)
-			box(M.inox, 0.05, 0.02, w, x - run / 2 + 0.025, top + 0.01, zc)
+			# un peu plus étroites que la cage : sinon, avec le tremblement, elles percent le carrelage
+			box(M.marche, run, top - floor_y + 0.3, w - 0.06, x, (top + floor_y - 0.3) / 2, zc, 1, 2)
+			box(M.inox, 0.05, 0.02, w - 0.06, x - run / 2 + 0.025, top + 0.01, zc)
 			if u.risers:
 				# une bande de la fresque par contremarche, pour qu'elle se lise depuis le bas
 				var g := PsxGeo.plane(w, step, 2, 1)
@@ -535,8 +536,11 @@ func _build_underpass(u: Dictionary) -> void:
 		# murs de la trémie : carreaux
 		var depth := PY - floor_y
 		for z in [zw, zi]:
-			plane(M.carreau, x1 - x0, depth, (x0 + x1) / 2, (PY + floor_y) / 2, z - inward * 0.01 * signf(z - zc), 0, (x1 - x0) / TW, depth / TH)
+			plane(M.carreau, x1 - x0, depth, (x0 + x1) / 2, (PY + floor_y) / 2, z, 0, (x1 - x0) / TW, depth / TH)
 		plane(M.carreau, w, PY - spring, x1, (PY + spring) / 2, zc, PI / 2, w / TW, (PY - spring) / TH)   # bout de la dalle
+		if not u.get("passage", true):
+			# station aérienne : sous le haut de l'escalier, un mur carrelé jusqu'au sol de la rue
+			plane(M.carreau, w, depth, x0 - 0.02, (PY + floor_y) / 2, zc, PI / 2, w / TW, depth / TH)
 		# main courante le long du mur
 		var rail_len := Vector2(x1 - x0, depth).length()
 		add(PsxGeo.box(rail_len, 0.04, 0.04), M.candPost, Vector3((x0 + x1) / 2, (PY + floor_y) / 2 + 0.9, zw + inward * 0.06),
