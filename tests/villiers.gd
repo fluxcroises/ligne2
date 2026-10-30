@@ -41,4 +41,11 @@ func _initialize() -> void:
 	for i in 60: await physics_frame
 	player.global_position = Vector3(21.2, -13.9, 27.0 - 4.533)
 	await walk(-90, 1.6, "montée dans la rame de la ligne 3")
+	# quai direction Gallieni : par le local technique et le couloir de service jusqu'à la boucle
+	player.global_position = Vector3(29.0, -13.9, 0.1)
+	await walk(-90, 1.0, "devant le local technique")
+	await walk(-90, 3.0, "dans le local, couloir de service")
+	await walk(-90, 4.0, "boucle, voiture Sprague ouverte")
+	player.global_position = Vector3(39.4, -13.9, 0.1)
+	await walk(0, 6.0, "le long de la banquette")
 	quit()

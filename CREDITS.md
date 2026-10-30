@@ -38,6 +38,7 @@ Retenues comme modèles pour la station Villiers. Aucune n'est encore reproduite
 - **Boucle désaffectée de Villiers** : « Vintage Sprague rolling stock in a disused tunnel inside the Paris Metro system, 2014.jpg »,
   par freeside510, Wikimedia Commons, licence [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/).
   <https://commons.wikimedia.org/wiki/File:Vintage_Sprague_rolling_stock_in_a_disused_tunnel_inside_the_Paris_Metro_system,_2014.jpg>
+  Sert de modèle à la boucle de `scripts/villiers.gd` et à `sprague_cote.png`, dessinée d'après elle.
 - Photo de quai avec la plaque « Villiers » et l'escalier à rambarde (© RATP – Bruno Marguerite)
   et photo d'un plan de ligne « Nation par Barbès – Rochechouart » (source inconnue) :
   modèles seulement, transmis par Lewis ; ils ne seront jamais reproduits.
