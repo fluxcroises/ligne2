@@ -27,7 +27,7 @@ const TUBE_X := -19.0          # axe du couloir
 const TUBE_HW := 1.2           # demi-largeur
 const TUBE_Z0 := 12.0          # fond du couloir (accès à la salle des billets, à venir)
 const TUBE_SPRING := PY + 1.4  # naissance de la voûte du couloir
-const TUBE_TOP := PY + 2.6     # clé de la voûte
+const TUBE_TOP := WT - 0.05    # clé de la voûte, sous la naissance de la voûte du quai
 
 # Ligne 3 : repère de son quai. Les voies (axe X local) suivent l'axe Z du monde ; le quai A
 # local (mur en z = 20) est en x = 18 dans le monde, 7,5 m plus bas que la ligne 2 :
