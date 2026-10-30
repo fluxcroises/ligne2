@@ -5,6 +5,7 @@ extends CanvasLayer
 var _root: Control
 var _menu: VBoxContainer
 var _settings: PanneauReglages
+var _debug: MenuDebug
 
 
 func _ready() -> void:
@@ -30,8 +31,11 @@ func _ready() -> void:
 	_menu.custom_minimum_size = Vector2(140, 0)
 	_menu.add_theme_constant_override("separation", 3)
 	_root.add_child(_menu)
-	for item in [["Reprendre", close], ["Réglages", _open_settings],
-			["Sauvegarder et revenir au titre", _to_title], ["Quitter le jeu", _quit]]:
+	var items := [["Reprendre", close], ["Réglages", _open_settings],
+			["Sauvegarder et revenir au titre", _to_title], ["Quitter le jeu", _quit]]
+	if MenuDebug.enabled():
+		items.insert(2, ["Débogage", _open_debug])
+	for item in items:
 		var b := Button.new()
 		b.text = item[0]
 		b.pressed.connect(item[1])
@@ -44,6 +48,16 @@ func _ready() -> void:
 		_menu.show()
 		(_menu.get_child(0) as Button).grab_focus())
 	_root.add_child(_settings)
+	if MenuDebug.enabled():
+		_debug = MenuDebug.new()
+		_debug.position = Vector2(66, 30)
+		_debug.hide()
+		_debug.closed.connect(func() -> void:
+			_debug.hide()
+			if is_inside_tree() and _root.visible:
+				_menu.show()
+				(_menu.get_child(0) as Button).grab_focus())
+		_root.add_child(_debug)
 	_root.hide()
 
 
@@ -51,7 +65,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("pause"):
 		return
 	if _root.visible:
-		if not _settings.visible:
+		if not _settings.visible and not (_debug and _debug.visible):
 			close()
 	elif not Enquete.in_dialogue:
 		open()
@@ -62,6 +76,8 @@ func open() -> void:
 	_root.show()
 	_menu.show()
 	_settings.hide()
+	if _debug:
+		_debug.hide()
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	(_menu.get_child(0) as Button).grab_focus()
@@ -78,6 +94,11 @@ func close() -> void:
 func _open_settings() -> void:
 	_menu.hide()
 	_settings.show()
+
+
+func _open_debug() -> void:
+	_menu.hide()
+	_debug.show()
 
 
 func _to_title() -> void:

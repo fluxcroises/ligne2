@@ -7,6 +7,7 @@ const FONTE := Color("#1f3a2e")      # vert fonte
 
 var _menu: VBoxContainer
 var _settings: PanneauReglages
+var _debug: MenuDebug
 
 
 func _ready() -> void:
@@ -59,6 +60,8 @@ func _ready() -> void:
 		_button("Continuer", _continue)
 	_button("Nouvelle partie", _new_game)
 	_button("Réglages", _open_settings)
+	if MenuDebug.enabled():
+		_button("Débogage", _open_debug)
 	_button("Quitter", func() -> void: get_tree().quit())
 	(_menu.get_child(0) as Button).grab_focus.call_deferred()
 
@@ -67,6 +70,12 @@ func _ready() -> void:
 	_settings.hide()
 	_settings.closed.connect(_close_settings)
 	add_child(_settings)
+	if MenuDebug.enabled():
+		_debug = MenuDebug.new()
+		_debug.position = Vector2(66, 40)
+		_debug.hide()
+		_debug.closed.connect(_close_settings)
+		add_child(_debug)
 
 
 func _button(text: String, action: Callable) -> void:
@@ -91,7 +100,14 @@ func _open_settings() -> void:
 	_settings.show()
 
 
+func _open_debug() -> void:
+	_menu.hide()
+	_debug.show()
+
+
 func _close_settings() -> void:
 	_settings.hide()
+	if _debug:
+		_debug.hide()
 	_menu.show()
 	(_menu.get_child(0) as Button).grab_focus()

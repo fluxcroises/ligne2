@@ -77,6 +77,36 @@ func start_chapter(n: int) -> void:
 	_prologue(n)
 
 
+# --- Débogage (voir MenuDebug) --------------------------------------------------
+
+## Nouvelle partie qui commence au chapitre `n`, comme si les précédents avaient été joués :
+## leurs pièces au dossier, leurs déductions résolues, leurs prologues reçus.
+func debug_start(n: int) -> void:
+	new_game()
+	_loading = true
+	for k in range(1, n):
+		debug_give_chapter(k)
+		debug_solve_chapter(k)
+		flags["chapitre_%d_fini" % k] = true
+		start_chapter(k + 1)
+	_loading = false
+
+
+## Toutes les pièces du dossier du chapitre `n`.
+func debug_give_chapter(n: int) -> void:
+	for id in Chapitres.content(n).EVIDENCE:
+		var path := "res://textures/%s.png" % (id if id.begins_with("photo_") else "photo_" + id)
+		add_evidence(id, load(path) if ResourceLoader.exists(path) else null)
+
+
+## Les déductions du chapitre `n`, résolues.
+func debug_solve_chapter(n: int) -> void:
+	for d in Chapitres.content(n).DEDUCTIONS:
+		if not solved.has(d.id):
+			solved.append(d.id)
+			deduction_solved.emit(d.id)
+
+
 func _prologue(n: int) -> void:
 	for m in Chapitres.content(n).PROLOGUE:
 		send_to_player(m.from, m.text, m.get("evidence", ""))
