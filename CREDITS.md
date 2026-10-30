@@ -77,6 +77,23 @@ Retenues comme modèles ; aucune n'est reproduite dans le jeu.
   `vitrine_marchetti.png`), plaque « Pigalle » (`nom_pigalle.png`) : dessinés pour le jeu ; le Chat Rouge et
   Antiquités Marchetti sont inventés.
 
+### Références pour Jaurès (chapitre 4)
+
+Retenues comme modèles ; aucune n'est reproduite dans le jeu.
+
+- **Quais de nuit, verrière, végétalisation** : « Jaurès - Ligne 2 - 2025 - Quais de nuit (1).jpg », « … - MF01 de nuit.jpg »,
+  « … - Végétalisation 2.jpg », « Jaurès - Métro de Paris - 2025 - Espace d'échanges 1.jpg », par Métroën,
+  Wikimedia Commons, domaine public (CC0).
+  <https://commons.wikimedia.org/wiki/File:Jaur%C3%A8s_-_Ligne_2_-_2025_-_Quais_de_nuit_(1).jpg>
+- **Quai de jour, accès sous le viaduc, viaduc** : « Station Métro Jaurès Ligne 2 - Paris X (FR75) - 2022-04-28 - 4.jpg »,
+  « Accès Station Jaurès Métro Paris Boulevard Villette - Paris XIX (FR75) - 2022-01-07 - 2.jpg », par
+  [Chabe01](https://commons.wikimedia.org/wiki/User:Chabe01), licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) ;
+  « P1080807 Paris X station metro Jaurès boulevard de la Villette rwk.JPG », par Mbzt, licence
+  [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+- Fenêtres, lambrequin, treillis, brique, bandeau Ⓜ ② ⑤ ⑦bis, locotracteur (`fenetre_jaures.png`, `lambrequin.png`,
+  `treillis.png`, `brique.png`, `sigle_jaures.png`, `locotracteur.png`) et plaque « Jaurès » : dessinés pour le jeu.
+  Le dépôt des trains de travaux sous le viaduc est inventé.
+
 ### Photos de Lewis
 
 Les textures de `textures/` issues de `textures_monceau_ps1.zip` ont été tirées des photos de Lewis.

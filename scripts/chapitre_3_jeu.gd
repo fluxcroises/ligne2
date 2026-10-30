@@ -38,4 +38,5 @@ func _check_end() -> void:
 	var trafic: Trafic = _station.trafic
 	var train := trafic.train_at(player.global_position) if player else null
 	if train and train.destination == "Nation" and trafic.is_moving(train):
-		_finish("Jaurès", "Marchetti écoule les objets volés que lui livre Franck Roussel, l'homme au gilet orange. Franck obéit à un chef de la maintenance. Les caisses partent du dépôt des trains de travaux, sous le viaduc de Jaurès.")
+		_finish("Jaurès", "Marchetti écoule les objets volés que lui livre Franck Roussel, l'homme au gilet orange. Franck obéit à un chef de la maintenance. Les caisses partent du dépôt des trains de travaux, sous le viaduc de Jaurès.",
+			_next_chapter)

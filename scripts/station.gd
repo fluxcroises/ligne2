@@ -489,11 +489,13 @@ func _platform_end_colliders(zw: float, ze: float, inward: float) -> CollisionSh
 #   rail, rail_h, rail_tile   garde-corps de la trémie (matériau, hauteur, largeur d'un motif) ;
 #   top_rail  lisse posée sur le garde-corps (ou null) ;  curb  bordure carrelée (ou null) ;
 #   risers  fresque peinte sur les contremarches (ou null) ;  frieze, plinth  habillage du passage ;
-#   door  (facultatif) ouverture [z0, z1] dans le mur du fond, vers un couloir.
+#   door  (facultatif) ouverture [z0, z1] dans le mur du fond, vers un couloir ;
+#   steps  (facultatif, 15 par défaut) nombre de marches ; passage  (facultatif, vrai par défaut)
+#   faux pour une station aérienne, où l'escalier descend à la rue au lieu d'un passage.
 
-## Hauteur d'une marche (15 marches du quai au passage).
+## Hauteur d'une marche (15 marches du quai au passage, sauf indication contraire).
 static func _underpass_step(u: Dictionary) -> float:
-	return (PY - u.floor) / 15.0
+	return (PY - u.floor) / u.get("steps", 15)
 
 
 ## Naissance de la voûte du passage.
@@ -515,17 +517,19 @@ func _build_underpass(u: Dictionary) -> void:
 		var zc := zw + inward * w / 2    # axe de l'escalier
 		var zi := zw + inward * w        # bord de la trémie côté voies
 		# marches grises à nez en inox, bande d'éveil en haut
-		for i in 15:
+		var n: int = u.get("steps", 15)
+		var run := (x1 - x0) / n
+		for i in n:
 			var top := PY - (i + 1) * step
-			var x := x0 + i * 0.5 + 0.25
-			box(M.marche, 0.5, top - floor_y + 0.3, w, x, (top + floor_y - 0.3) / 2, zc, 1, 2)
-			box(M.inox, 0.05, 0.02, w, x - 0.225, top + 0.01, zc)
+			var x := x0 + i * run + run / 2
+			box(M.marche, run, top - floor_y + 0.3, w, x, (top + floor_y - 0.3) / 2, zc, 1, 2)
+			box(M.inox, 0.05, 0.02, w, x - run / 2 + 0.025, top + 0.01, zc)
 			if u.risers:
 				# une bande de la fresque par contremarche, pour qu'elle se lise depuis le bas
 				var g := PsxGeo.plane(w, step, 2, 1)
 				for k in g.uv.size():
-					g.uv[k] = Vector2(g.uv[k].x, (i + g.uv[k].y) / 15.0)
-				add(g, u.risers, Vector3(x0 + i * 0.5 + 0.005, top + step / 2, zc), Vector3(0, PI / 2, 0))
+					g.uv[k] = Vector2(g.uv[k].x, (i + g.uv[k].y) / n)
+				add(g, u.risers, Vector3(x0 + i * run + 0.005, top + step / 2, zc), Vector3(0, PI / 2, 0))
 		rect(M.bande, x0 - 0.6, minf(zw, zi), x0, maxf(zw, zi), PY + 0.006, 0.55)
 		plane(M.marche, w, step + 0.02, x0, PY - step / 2, zc, PI / 2, 1, 0.3)   # contremarche du haut
 		# murs de la trémie : carreaux
@@ -550,6 +554,8 @@ func _build_underpass(u: Dictionary) -> void:
 			box(u.top_rail, x1 - x0, 0.05, 0.05, (x0 + x1) / 2, base + rh, zi)
 			box(u.top_rail, 0.05, 0.05, w, x1, base + rh, zc)
 
+	if not u.get("passage", true):
+		return
 	# le passage : murs carrelés, frise, plinthe, voûte blanche, sol gris foncé
 	var mid := (ZA + ZB) / 2
 	var wall_h := spring - floor_y
@@ -645,6 +651,8 @@ func _platform_colliders(u: Dictionary, openings: Array) -> Array[CollisionShape
 		_solid(Vector3(x1 - x0, PY - floor_y, 0.2), Vector3((x0 + x1) / 2, (PY + floor_y) / 2, zi + inward * 0.1))
 		_ramp(Vector3(x0, PY, zw + inward * w / 2), Vector3(x1, floor_y, zw + inward * w / 2), w)
 		q += 1
+	if not u.get("passage", true):
+		return barriers
 	# passage sous les voies
 	_solid(Vector3(u.x2 - x1, 0.2, ZB - ZA), Vector3((x1 + u.x2) / 2, floor_y - 0.1, (ZA + ZB) / 2))
 	for run in _underpass_far_wall(u):
