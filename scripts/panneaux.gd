@@ -70,7 +70,7 @@ static func band(parent: Node, letter: String, text: String) -> ViewportTexture:
 ## Face avant d'une rame MF01, d'après une illustration fournie comme modèle : caisse vert
 ## d'eau, girouette (« 2 » et la destination en orange), grand pare-brise, bandeau gris foncé
 ## avec numéro de rame et feux ronds, jupe blanche et attelage. 64 × 80 px.
-static func mf01_front(parent: Node, destination: String, number: String) -> ViewportTexture:
+static func mf01_front(parent: Node, destination: String, number: String, line := "2") -> ViewportTexture:
 	var vp := _viewport(parent, Vector2i(64, 80))
 	var teal := Color("#16a394")
 	var orange := Color("#ff8a1e")
@@ -78,7 +78,7 @@ static func mf01_front(parent: Node, destination: String, number: String) -> Vie
 	_rect(vp, teal, Rect2(2, 0, 60, 62))
 	_rect(vp, Color("#0d0f10"), Rect2(10, 3, 44, 8))                  # girouette
 	_rect(vp, orange, Rect2(12, 4, 6, 6))
-	_text(vp, "2", Color.BLACK, 6, Vector2(13, 2.5), true)
+	_text(vp, line, Color.BLACK, 6, Vector2(13, 2.5), true)
 	_text(vp, "Pte Dauphine" if destination == "Porte Dauphine" else destination, orange, 6, Vector2(21, 2.5), false)
 	_rect(vp, Color("#2a3036"), Rect2(6, 13, 52, 28))                 # cadre du pare-brise
 	_rect(vp, Color("#c9d3e0"), Rect2(8, 14, 48, 25))

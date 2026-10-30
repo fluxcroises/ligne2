@@ -1,9 +1,10 @@
 class_name Trafic
 extends Node3D
-## Le trafic de la ligne 2 à Monceau, repris du prototype : une rame par voie, un passage
+## Le trafic d'une ligne dans une station, repris du prototype : une rame par voie, un passage
 ## toutes les 94 secondes ; écrans des prochains passages ; grondement des rames et bip de
 ## fermeture des portes. Le joueur peut monter à bord : la rame repart puis revient à quai
-## (en attendant les autres stations).
+## (en attendant les autres stations). Les rames suivent l'axe X du nœud, qui peut être tourné
+## (la ligne 3 à Villiers croise la ligne 2).
 
 const CYCLE := 94.0
 const APPROACH := 110.0     # distance d'où la rame arrive, et où elle disparaît
@@ -11,6 +12,9 @@ const APPROACH := 110.0     # distance d'où la rame arrive, et où elle dispara
 ## Heure de jeu au lancement, en minutes : le chapitre 1 commence vers 23 h 05.
 var clock_start := Chapitre1.START
 var time := 0.0
+## Numéro et couleur de la ligne (écrans, girouettes) ; à régler avant setup().
+var line := "2"
+var line_color := Color("#0055c8")
 var trains: Array[MF01] = []
 var siel_materials: Array[ShaderMaterial] = []
 
@@ -30,7 +34,7 @@ func setup(M: Dictionary, rails_y: float, floor_height: float, tracks: Array, ba
 	for t in tracks:
 		# face avant à la girouette de la rame (un jeu de matériaux par rame)
 		var face: ShaderMaterial = M.rameFace.duplicate()
-		face.set_shader_parameter("albedo_texture", Panneaux.mf01_front(self, t[4], numbers[trains.size() % numbers.size()]))
+		face.set_shader_parameter("albedo_texture", Panneaux.mf01_front(self, t[4], numbers[trains.size() % numbers.size()], line))
 		face.set_shader_parameter("emission", Vector3(0.25, 0.25, 0.25))
 		var mats := M.duplicate()
 		mats.rameFace = face
@@ -97,6 +101,7 @@ func clock_text() -> String:
 func _physics_process(delta: float) -> void:
 	time += delta
 	var player := get_tree().get_first_node_in_group("player") as Node3D
+	var lp := to_local(player.global_position) if player else Vector3.ZERO   # joueur dans le repère de la ligne
 	var rumble := 0.0
 	for i in trains.size():
 		var train := trains[i]
@@ -109,14 +114,14 @@ func _physics_process(delta: float) -> void:
 		var dx: float = st.x - train.position.x
 		train.position.x = st.x
 		if aboard:
-			player.global_position.x += dx
+			player.global_position += global_transform.basis * Vector3(dx, 0, 0)
 		train.visible = not st.has("hidden")
 
 		var open: bool = st.k > 10.0 and st.k < 24.0
 		train.set_doors(train.doors_amount + ((1.0 if open else 0.0) - train.doors_amount) * minf(1.0, delta * 3.0))
 		if st.k > 23.0 and st.k < 24.0 and not train.beeped:
 			train.beeped = true
-			if player and player.global_position.y < -5.0 and absf(train.position.z - player.global_position.z) < 14.0:
+			if player and player.global_position.y < -5.0 and absf(train.position.z - lp.z) < 14.0:
 				_beep.play()
 		if st.k < 1.0:
 			train.beeped = false
@@ -127,7 +132,7 @@ func _physics_process(delta: float) -> void:
 			_barriers[i].set_deferred("disabled", at_platform)
 
 		if player and train.visible:
-			var dist := Vector2(st.x - player.global_position.x, train.position.z - player.global_position.z).length()
+			var dist := Vector2(st.x - lp.x, train.position.z - lp.z).length()
 			rumble += (minf(1.0, absf(st.v) / 18.0) * 0.9 + 0.08) / (1.0 + dist / 18.0)
 	if player and player.global_position.y > -5.0:
 		rumble *= 0.15
@@ -150,7 +155,6 @@ const SIEL_SIZE := Vector2i(128, 61)
 const SIEL_YELLOW := Color("#ffbf00")
 const SIEL_YELLOW_DIM := Color("#7a5a00")
 const SIEL_NAVY := Color("#0b0a86")
-const LINE_2_BLUE := Color("#0055c8")
 
 ## Message de l'encart d'info trafic ; l'histoire pourra le changer.
 var info_message := "Trafic normal sur l'ensemble de la ligne."
@@ -173,7 +177,7 @@ func _make_siel(destination: String) -> Dictionary:
 	# bandeau
 	_rect(vp, Color.WHITE, Rect2(0, 0, 128, 16))
 	_disc(vp, Color.WHITE, Color("#263040"), Vector2(9, 8), "M")
-	_disc(vp, LINE_2_BLUE, Color.TRANSPARENT, Vector2(21, 8), "2")
+	_disc(vp, line_color, Color.TRANSPARENT, Vector2(21, 8), line)
 	_text(vp, destination, SIEL_NAVY, 11, Vector2(32, 0), bold)
 	# prochains passages
 	_text(vp, "1er métro", Color.WHITE, 5, Vector2(3, 18))
@@ -188,7 +192,7 @@ func _make_siel(destination: String) -> Dictionary:
 	_rect(vp, Color.WHITE, Rect2(64, 18, 62, 35))
 	_rect(vp, Color("#eeeeee"), Rect2(64, 18, 62, 8))
 	_disc(vp, Color.WHITE, Color("#263040"), Vector2(69, 22), "M")
-	_disc(vp, LINE_2_BLUE, Color.TRANSPARENT, Vector2(79, 22), "2")
+	_disc(vp, line_color, Color.TRANSPARENT, Vector2(79, 22), line)
 	_rect(vp, Color.BLACK, Rect2(105, 18, 20, 8))
 	var clock := _text(vp, "23:05", SIEL_YELLOW, 6, Vector2(106, 17))
 	var info := _text(vp, info_message, Color("#111111"), 5, Vector2(66, 26))
@@ -198,7 +202,7 @@ func _make_siel(destination: String) -> Dictionary:
 	info.clip_text = true
 	info.add_theme_constant_override("line_spacing", -2)
 	# bande de la ligne
-	_rect(vp, LINE_2_BLUE, Rect2(0, 55, 128, 6))
+	_rect(vp, line_color, Rect2(0, 55, 128, 6))
 	return {"viewport": vp, "first": first, "second": second, "clock": clock, "info": info}
 
 

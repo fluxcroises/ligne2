@@ -1,6 +1,7 @@
 extends SceneTree
-## Villiers, quais de la ligne 2 : du couloir en tube au quai direction Porte Dauphine, puis par
-## l'escalier et le passage sous les voies jusqu'au quai direction Nation.
+## Villiers : du couloir en tube au quai direction Porte Dauphine, par l'escalier et le passage
+## sous les voies jusqu'au quai direction Nation, puis par le couloir de correspondance
+## jusqu'au quai de la ligne 3.
 var player
 var station
 
@@ -27,8 +28,17 @@ func _initialize() -> void:
 	await walk(180, 2.0, "vers le bord du quai (garde-fou)")
 	player.global_position = Vector3(-3.0, -6.4, 20.8)
 	await walk(-90, 4.0, "descente vers le passage")
+	player.global_position.x = 6.7   # au milieu du passage, loin de l'ouverture du couloir
 	await walk(180, 4.2, "passage sous les voies")
 	await walk(90, 4.0, "montée vers le quai Nation")
 	player.global_position = Vector3(-6.0, -6.4, 31.0)
 	await walk(-90, 6.0, "le long de la trémie, quai Nation")
+	player.global_position = Vector3(6.6, -10.8, 27.0)
+	await walk(-90, 9.0, "couloir de correspondance -> ligne 3")
+	await walk(0, 3.0, "le long du quai de la ligne 3")
+	var t3 = station.trafic3
+	t3.time = 15.0 - 20.0 + 94.0   # rame direction Pont de Levallois à quai
+	for i in 60: await physics_frame
+	player.global_position = Vector3(21.2, -13.9, 27.0 - 4.533)
+	await walk(-90, 1.6, "montée dans la rame de la ligne 3")
 	quit()

@@ -34,7 +34,7 @@ func _init(M: Dictionary, floor_h: float, side: int, dir: int, off: float, dest:
 
 ## Le point est-il à l'intérieur de la rame, au niveau du plancher ?
 func contains(p: Vector3) -> bool:
-	var lp := p - position
+	var lp := to_local(p)
 	return absf(lp.x) < HALF_LENGTH - 0.7 and absf(lp.z) < 1.25 and absf(lp.y - floor_height) < 1.0
 
 

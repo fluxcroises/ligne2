@@ -31,6 +31,9 @@ var underground := false
 var _builder := PsxBuilder.new()
 ## Miroir appliqué pendant la construction d'une partie retournée (voir Monceau, salle des billets).
 var _mirror := Transform3D.IDENTITY
+## Repère de construction : une seconde ligne (la ligne 3 à Villiers) se construit avec les mêmes
+## fonctions dans un repère tourné et déplacé.
+var _frame := Transform3D.IDENTITY
 var _solid_side := 1.0
 var _lanterns: Array[Vector3] = []
 ## Lampes des parties souterraines (couloirs, escaliers), éclairage par sommet.
@@ -56,10 +59,19 @@ func _begin() -> void:
 
 ## Rames et écrans : [z de la voie, côté des portes, sens, décalage dans le cycle, destination].
 func _setup_trafic(tracks: Array, barriers: Array[CollisionShape3D]) -> void:
-	trafic = Trafic.new()
-	trafic.name = "Trafic"
-	add_child(trafic)
-	trafic.setup(M, RY, PY - RY, tracks, barriers)
+	trafic = _add_trafic("Trafic", tracks, barriers)
+
+
+## Trafic d'une ligne dans le repère de construction courant (une seconde ligne en correspondance).
+func _add_trafic(node_name: String, tracks: Array, barriers: Array[CollisionShape3D], line := "2", color := Color("#0055c8")) -> Trafic:
+	var t := Trafic.new()
+	t.name = node_name
+	t.line = line
+	t.line_color = color
+	t.transform = _frame
+	add_child(t)
+	t.setup(M, RY, PY - RY, tracks, barriers)
+	return t
 
 
 ## Zone éclairée par les néons du quai (blanc chaud), sur toute la longueur de la station.
@@ -198,11 +210,11 @@ static func seg(v: float, cap := 48) -> int:
 
 
 func add(geo: Dictionary, m: Material, pos: Vector3, rot := Vector3.ZERO, scale := Vector3.ONE) -> void:
-	_builder.add(geo, m, _mirror * PsxGeo.xf(pos, rot, scale))
+	_builder.add(geo, m, _frame * _mirror * PsxGeo.xf(pos, rot, scale))
 
 
 func add_xf(geo: Dictionary, m: Material, xform: Transform3D) -> void:
-	_builder.add(geo, m, _mirror * xform)
+	_builder.add(geo, m, _frame * _mirror * xform)
 
 
 
@@ -252,20 +264,22 @@ func _build_shell(ramps := true) -> void:
 
 
 ## Écrans des prochains passages, suspendus au-dessus de chaque quai aux abscisses données.
-func _build_screens(xs: Array) -> void:
+func _build_screens(xs: Array, t: Trafic = null) -> void:
+	if t == null:
+		t = trafic
 	for screen in [[22.4, 0], [31.6, 1]]:
 		var z: float = screen[0]
-		var m: Material = trafic.siel_materials[screen[1]]
+		var m: Material = t.siel_materials[screen[1]]
 		for x in xs:
 			for r in [PI / 2, -PI / 2]:
 				plane(m, 1.6, 0.76, x + (0.03 if r > 0 else -0.03), -3.5, z, r)
 			box(M.fonteDark, 0.04, 0.78, 1.62, x, -3.5, z)
 			var screen_item := Examinable.new()
 			screen_item.title = "Écran des prochains passages"
-			screen_item.position = Vector3(x, -3.5, z)
+			_place(screen_item, Vector3(x, -3.5, z))
 			_examinable_shape(screen_item, Vector3(0.2, 0.8, 1.7))
 			add_child(screen_item)
-			trafic.siel_examinables[screen[1]].append(screen_item)
+			t.siel_examinables[screen[1]].append(screen_item)
 			box(M.inox, 0.03, 1.0, 0.03, x, -2.7, z)
 
 
@@ -372,6 +386,11 @@ func _sign_from_texture(tex: Texture2D) -> ShaderMaterial:
 	return m
 
 
+## Place un nœud dans le repère de construction courant.
+func _place(node: Node3D, pos: Vector3) -> void:
+	node.transform = _frame * Transform3D(Basis(), pos)
+
+
 func _examinable_shape(item: Examinable, size: Vector3) -> void:
 	var shape := CollisionShape3D.new()
 	shape.shape = BoxShape3D.new()
@@ -386,8 +405,7 @@ func _solid(size: Vector3, pos: Vector3, rot := Vector3.ZERO) -> CollisionShape3
 	var shape := CollisionShape3D.new()
 	shape.shape = BoxShape3D.new()
 	shape.shape.size = size
-	shape.position = Vector3(pos.x * _solid_side, pos.y, pos.z)
-	shape.rotation = rot
+	shape.transform = _frame * Transform3D(Basis.from_euler(rot), Vector3(pos.x * _solid_side, pos.y, pos.z))
 	_collisions.add_child(shape)
 	return shape
 
@@ -397,7 +415,7 @@ func _post(radius: float, height: float, pos: Vector3) -> void:
 	shape.shape = CylinderShape3D.new()
 	shape.shape.radius = radius
 	shape.shape.height = height
-	shape.position = pos + Vector3(0, height / 2, 0)
+	shape.transform = _frame * Transform3D(Basis(), pos + Vector3(0, height / 2, 0))
 	_collisions.add_child(shape)
 
 
@@ -434,7 +452,8 @@ func _platform_end_colliders(zw: float, ze: float, inward: float) -> CollisionSh
 #   floor, ceil   sol et plafond du passage ;
 #   rail, rail_h, rail_tile   garde-corps de la trémie (matériau, hauteur, largeur d'un motif) ;
 #   top_rail  lisse posée sur le garde-corps (ou null) ;  curb  bordure carrelée (ou null) ;
-#   risers  fresque peinte sur les contremarches (ou null) ;  frieze, plinth  habillage du passage.
+#   risers  fresque peinte sur les contremarches (ou null) ;  frieze, plinth  habillage du passage ;
+#   door  (facultatif) ouverture [z0, z1] dans le mur du fond, vers un couloir.
 
 ## Hauteur d'une marche (15 marches du quai au passage).
 static func _underpass_step(u: Dictionary) -> float:
@@ -499,16 +518,28 @@ func _build_underpass(u: Dictionary) -> void:
 	var mid := (ZA + ZB) / 2
 	var wall_h := spring - floor_y
 	rect(M.sol, x1, ZA, x2, ZB, floor_y, 2.4)
-	for wall in [[x2, ZB - ZA, mid], [x1, ZB - ZA - 2 * w, mid]]:
+	var walls := [[x1, ZA + w, ZB - w]]
+	for run in _underpass_far_wall(u):
+		walls.append([x2, run[0], run[1]])
+	for wall in walls:
 		var x: float = wall[0]
-		var length: float = wall[1]
-		plane(M.carreau, length, wall_h, x, (floor_y + spring) / 2, wall[2], PI / 2, length / TW, wall_h / TH)
-		plane(u.frieze, length, 0.14, x + (0.01 if x < x2 else -0.01), spring - 0.07, wall[2], PI / 2, length / 0.6, 1)
-		plane(u.plinth, length, 0.2, x + (0.01 if x < x2 else -0.01), floor_y + 0.1, wall[2], PI / 2, length / 0.6, 1)
+		var length: float = wall[2] - wall[1]
+		var zm: float = (wall[1] + wall[2]) / 2
+		plane(M.carreau, length, wall_h, x, (floor_y + spring) / 2, zm, PI / 2, length / TW, wall_h / TH)
+		plane(u.frieze, length, 0.14, x + (0.01 if x < x2 else -0.01), spring - 0.07, zm, PI / 2, length / 0.6, 1)
+		plane(u.plinth, length, 0.2, x + (0.01 if x < x2 else -0.01), floor_y + 0.1, zm, PI / 2, length / 0.6, 1)
 	for z in [ZA, ZB]:
 		plane(M.carreau, x2 - x1, u.ceil - floor_y, (x1 + x2) / 2, (u.ceil + floor_y) / 2, z, 0, (x2 - x1) / TW, (u.ceil - floor_y) / TH)
 	_build_underpass_vault(u)
 	box(M.neon, 0.15, 0.05, ZB - ZA - 2, (x1 + x2) / 2, u.ceil - 0.03, mid)
+
+
+## Tronçons [z0, z1] du mur du fond du passage, interrompu par `u.door` s'il y en a une
+## (ouverture [z0, z1] vers un couloir, de la hauteur des murs).
+static func _underpass_far_wall(u: Dictionary) -> Array:
+	if not u.has("door"):
+		return [[ZA, ZB]]
+	return [[ZA, u.door[0]], [u.door[1], ZB]]
 
 
 ## Voûte surbaissée du passage, d'un mur à l'autre, sur toute sa longueur.
@@ -580,7 +611,8 @@ func _platform_colliders(u: Dictionary, openings: Array) -> Array[CollisionShape
 		q += 1
 	# passage sous les voies
 	_solid(Vector3(u.x2 - x1, 0.2, ZB - ZA), Vector3((x1 + u.x2) / 2, floor_y - 0.1, (ZA + ZB) / 2))
-	_solid(Vector3(0.2, u.ceil - floor_y, ZB - ZA), Vector3(u.x2 + 0.1, (floor_y + u.ceil) / 2, (ZA + ZB) / 2))
+	for run in _underpass_far_wall(u):
+		_solid(Vector3(0.2, u.ceil - floor_y, run[1] - run[0]), Vector3(u.x2 + 0.1, (floor_y + u.ceil) / 2, (run[0] + run[1]) / 2))
 	_solid(Vector3(0.2, u.ceil - floor_y, ZB - ZA - 2 * w), Vector3(x1 - 0.1, (floor_y + u.ceil) / 2, (ZA + ZB) / 2))
 	return barriers
 
@@ -593,7 +625,7 @@ func _line_plan(from: String, terminus: String, pos: Vector3, ry: float) -> void
 	var item := Examinable.new()
 	item.title = "Plan de la ligne 2"
 	item.description = Panneaux.line_plan_text(from, terminus)
-	item.position = pos
+	_place(item, pos)
 	var depth := Vector3(0.15, size.y, size.x) if absf(sin(ry)) > 0.5 else Vector3(size.x, size.y, 0.15)
 	_examinable_shape(item, depth)
 	add_child(item)
