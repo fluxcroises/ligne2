@@ -24,6 +24,24 @@ On en a repris la disposition, les proportions et les couleurs. Aucune texture n
   « Monceau » (photo de produit) : modèles pour `plan_quartier.png`, `plan_reseau.png` et le
   cadre de `plaque.png`, redessinés sans reprise des images.
 
+### Références pour Villiers (chapitre 2)
+
+Retenues comme modèles pour la station Villiers. Aucune n'est encore reproduite dans le jeu.
+
+- **Quai de la ligne 2** : « F9485 Paris 8e et 17e Metro Villiers ligne 2 direction Nation rwk.jpg »,
+  par Mbzt, Wikimedia Commons, licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  <https://commons.wikimedia.org/wiki/File:F9485_Paris_8e_et_17e_Metro_Villiers_ligne_2_direction_Nation_rwk.jpg>
+- **Accès place Prosper-Goubaux** : « Accès Station Métro Villiers Place Prosper Goubaux - Paris XVII (FR75) - 2022-01-30 - 2.jpg »,
+  par [Chabe01](https://commons.wikimedia.org/wiki/User:Chabe01), Wikimedia Commons,
+  licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+  <https://commons.wikimedia.org/wiki/File:Acc%C3%A8s_Station_M%C3%A9tro_Villiers_Place_Prosper_Goubaux_-_Paris_XVII_(FR75)_-_2022-01-30_-_2.jpg>
+- **Boucle désaffectée de Villiers** : « Vintage Sprague rolling stock in a disused tunnel inside the Paris Metro system, 2014.jpg »,
+  par freeside510, Wikimedia Commons, licence [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/).
+  <https://commons.wikimedia.org/wiki/File:Vintage_Sprague_rolling_stock_in_a_disused_tunnel_inside_the_Paris_Metro_system,_2014.jpg>
+- Photo de quai avec la plaque « Villiers » et l'escalier à rambarde (© RATP – Bruno Marguerite)
+  et photo d'un plan de ligne « Nation par Barbès – Rochechouart » (source inconnue) :
+  modèles seulement, transmis par Lewis ; ils ne seront jamais reproduits.
+
 ### Photos de Lewis
 
 Les textures de `textures/` issues de `textures_monceau_ps1.zip` ont été tirées des photos de Lewis.
