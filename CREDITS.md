@@ -41,6 +41,13 @@ Retenues comme modèles pour la station Villiers. Aucune n'est encore reproduite
 - Photo de quai avec la plaque « Villiers » et l'escalier à rambarde (© RATP – Bruno Marguerite)
   et photo d'un plan de ligne « Nation par Barbès – Rochechouart » (source inconnue) :
   modèles seulement, transmis par Lewis ; ils ne seront jamais reproduits.
+- **Quai de la ligne 3** : « Station Villiers Métro Paris Ligne 3 - Paris XVII (FR75) - 2022-07-01 - 1.jpg »,
+  par [Chabe01](https://commons.wikimedia.org/wiki/User:Chabe01), Wikimedia Commons,
+  licence [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+  <https://commons.wikimedia.org/wiki/File:Station_Villiers_M%C3%A9tro_Paris_Ligne_3_-_Paris_XVII_(FR75)_-_2022-07-01_-_1.jpg>
+- Escalier décoré vers le quai (© Sortir à Paris), tunnel à deux niveaux, mâts d'entrée (Guimard,
+  « M » dans un anneau, enseigne « METROPOLITAIN », candélabre « METRO ») et couloir en tube
+  carrelé débouchant sur le quai (sources diverses) : modèles seulement, transmis par Lewis.
 
 ### Photos de Lewis
 
