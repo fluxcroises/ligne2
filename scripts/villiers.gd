@@ -77,7 +77,7 @@ func _ready() -> void:
 		_under_lamps.append(LINE3 * p)
 	for l in LAMPS:
 		_lanterns.append(Vector3(l.x, 4.4, l.y))
-	_begin()
+	_begin(2)
 	M.nom = _mat("nom_villiers")
 	M.rambarde = _mat("rambarde_villiers", 0xffffff, true)
 	M.carreau_bleu = _mat("carreau_bleu")
@@ -99,6 +99,10 @@ func _ready() -> void:
 	_build_line3()
 	_build_boucle()
 	_frame = Transform3D.IDENTITY
+	_place_people()
+	var chapter := preload("res://scripts/chapitre_2_jeu.gd").new()
+	chapter.name = "Chapitre2"
+	add_child(chapter)
 	_builder.build(self)
 	_set_platform_zone()
 	# seconde zone éclairée : le quai de la ligne 3
@@ -425,8 +429,8 @@ func _line3_colliders() -> Array[CollisionShape3D]:
 
 var local_door: Node3D
 var local_door_item: Examinable
-## Porte du local ouverte (le chapitre 2 décidera quand) : ouverte pour l'instant.
-var local_open := true
+## Porte du local ouverte : l'agent de sécurité l'ouvre au chapitre 2 (voir Chapitre2Jeu).
+var local_open := false
 
 
 func _build_kiosk3() -> void:
@@ -451,6 +455,19 @@ func _build_kiosk3() -> void:
 	box(M.noir, 0.02, 0.3, 0.3, x1 - 0.56, PY + 1.4, (z0 + ZB) / 2)
 	box(M.neon, 0.8, 0.04, 0.1, k.x, PY + h - 0.05, (z0 + ZB) / 2)
 	_solid(Vector3(0.5, 1.9, 0.9), Vector3(x1 - 0.3, PY + 0.95, (z0 + ZB) / 2))
+	# le planning des trains de travaux, punaisé au mur du fond (à l'abri du battant ouvert)
+	var sheet := Vector3((x0 + SERV.x) / 2, PY + 1.5, ZB - 0.03)
+	box(_mat("blanc", 0xf2efe6), 0.3, 0.42, 0.01, sheet.x, sheet.y, sheet.z)
+	for line in 5:
+		box(M.noir, 0.22, 0.012, 0.012, sheet.x, sheet.y + 0.12 - line * 0.06, sheet.z - 0.01)
+	var planning := Examinable.new()
+	planning.title = "Planning affiché"
+	planning.description = "Une feuille punaisée : « Trains de travaux · voie de garage de Villiers · mardi et vendredi, 1 h 30 – 4 h ». Signée « M. D. »."
+	planning.evidence_id = "planning_travaux"
+	planning.photo_range = 2.0
+	_place(planning, sheet + Vector3(0, 0, -0.04))
+	_examinable_shape(planning, Vector3(0.35, 0.45, 0.1))
+	add_child(planning)
 	for run in [[x0, KIOSK_DOOR.x], [KIOSK_DOOR.y, x1]]:
 		_solid(Vector3(run[1] - run[0], h, 0.1), Vector3((run[0] + run[1]) / 2, PY + h / 2, z0))
 	for x in [x0, x1]:
@@ -666,7 +683,8 @@ func _build_spragues() -> void:
 			_solid_xf(Vector3(crate[2], crate[3], crate[4]), xf * PsxGeo.xf(Vector3(crate[0], floor_y + crate[3] / 2, crate[1])))
 		var label := Examinable.new()
 		label.title = "Caisse en bois"
-		label.description = "Une caisse neuve, couvercle cloué, au milieu de la poussière. Étiquette de transport : « Fragile – Objets d'art ». Par une fente, on devine une statuette emballée dans du papier bulle."
+		label.evidence_id = "caisse"
+		label.description = "Une caisse neuve, couvercle cloué, au milieu de la poussière. « Fragile – Objets d'art ». Par une fente, une statuette de bronze dans du papier bulle. Étiquette d'expédition : Antiquités Marchetti, rue Frochot, Paris 9e."
 		label.transform = LINE3 * xf * PsxGeo.xf(Vector3(1.6, floor_y + 0.35, 0))
 		_examinable_shape(label, Vector3(0.85, 0.75, 0.65))
 		add_child(label)
@@ -946,3 +964,37 @@ func _build_street() -> void:
 	for edge in [[Vector3(0.4, 6, W1.y - W0.y), Vector3(W0.x, 3, (W0.y + W1.y) / 2)], [Vector3(0.4, 6, W1.y - W0.y), Vector3(W1.x, 3, (W0.y + W1.y) / 2)],
 			[Vector3(W1.x - W0.x, 6, 0.4), Vector3((W0.x + W1.x) / 2, 3, W0.y)], [Vector3(W1.x - W0.x, 6, 0.4), Vector3((W0.x + W1.x) / 2, 3, W1.y)]]:
 		_solid(edge[0], edge[1])
+
+
+# --- Personnages du chapitre 2 ---------------------------------------------------
+
+func _place_people() -> void:
+	var c := CAFE
+	var cast := [
+		["ines", "Inès, conductrice", {"coat": Color("#2a3a5a"), "pants": Color("#20242c"), "skin": Color("#c89a7a"), "hair": Color("#3a2218")},
+			true, Vector3(c.x + 1.9, 0, c.z + 0.6), 0.0],
+		["patron", "Le patron du café", {"coat": Color("#e8e2d4"), "pants": Color("#2a2a2c"), "skin": Color("#d0a080"), "hair": Color("#8a8682")},
+			false, Vector3(c.x + 1.0, 0, c.z - 3.6), -PI / 2],
+		["gpsr", "Agent de sécurité", {"coat": Color("#1c2230"), "pants": Color("#1a1d24"), "skin": Color("#7a5440"), "hair": Color("#151210"), "hat": Color("#1c2230")},
+			false, Vector3(HALL_X1 - 1.6, CY, 0.2), PI / 2],
+	]
+	if not Enquete.check("franck_vu"):
+		var q := _boucle_point(deg_to_rad(-75.0), 2.05)
+		cast.append(["franck", "Un homme en gilet orange", {"coat": Color("#3a3a36"), "pants": Color("#2a2c30"), "skin": Color("#c09070"),
+			"hair": Color("#2a2420"), "vest": Color("#ff7a1a")}, false, LINE3 * Vector3(q.x, PY, q.y), PI])
+	for p in cast:
+		var person := Personnage.new(p[0], p[1], p[2], p[3])
+		person.name = p[0].capitalize()
+		person.position = p[4]
+		person.rotation.y = p[5]
+		add_child(person)
+		people[p[0]] = person
+
+
+## Le chemin de Franck quand il s'enfuit : le long de la banquette, jusqu'au bout de la boucle.
+func franck_escape() -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	for deg in [-68.0, -62.0, -56.0]:
+		var q := _boucle_point(deg_to_rad(deg), 2.05)
+		out.append(LINE3 * Vector3(q.x, PY, q.y))
+	return out

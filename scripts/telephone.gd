@@ -141,7 +141,7 @@ func _home() -> void:
 	_begin("Téléphone")
 	_button("Appareil photo", _open_camera)
 	_button("Dossier (%d)" % Enquete.evidence.size(), _show.bind(_dossier))
-	var open_deductions := Chapitre1.DEDUCTIONS.filter(func(d): return not Enquete.solved.has(d.id)).size()
+	var open_deductions := Chapitres.deductions(Enquete.chapter).filter(func(d): return not Enquete.solved.has(d.id)).size()
 	_button("Déductions" + (" (%d)" % open_deductions if open_deductions > 0 else ""), _show.bind(_deductions))
 	var unread := Enquete.unread_count()
 	_button("Messages" + (" · %d nouveau%s" % [unread, "x" if unread > 1 else ""] if unread > 0 else ""), _show.bind(_messages))
@@ -158,7 +158,7 @@ func _dossier() -> void:
 	for item in Enquete.evidence:
 		if item.chapter != chapter:
 			chapter = item.chapter
-			_text("Chapitre %d · %s" % [chapter, Chapitre1.STATION], ACCENT)
+			_text("Chapitre %d · %s" % [chapter, Chapitres.station(chapter)], ACCENT)
 		_button("%s · %s" % [KIND_LABEL[item.kind], item.title], _show.bind(_evidence_detail.bind(item)))
 	_focus_first()
 
@@ -202,7 +202,7 @@ func _search() -> void:
 		_focus_first()
 		return
 	_text("Suggestions :", DIM)
-	for s in Chapitre1.SEARCHES:
+	for s in Chapitres.searches(Enquete.chapter):
 		if Enquete.check(s.if):
 			_button(s.query, _run_search.bind(s))
 	_focus_first()
@@ -230,14 +230,14 @@ func _search_results(s: Dictionary) -> void:
 		if id != "" and not Enquete.has_evidence(id):
 			_button("Enregistrer dans le dossier", func() -> void:
 				Enquete.add_evidence(id, Enquete.evidence_image(id))
-				toast("Ajouté au dossier : " + Chapitre1.EVIDENCE[id].title)
+				toast("Ajouté au dossier : " + Chapitres.evidence(id).title)
 				_refresh())
 	_focus_first()
 
 
 func _deductions() -> void:
 	_begin("Déductions")
-	for d in Chapitre1.DEDUCTIONS:
+	for d in Chapitres.deductions(Enquete.chapter):
 		var done := Enquete.solved.has(d.id)
 		_button(("Résolue · " if done else "") + d.question, _show.bind(_deduction_editor.bind(d)))
 	_focus_first()
@@ -288,7 +288,7 @@ func _plan() -> void:
 	_begin("Plan · ligne 2")
 	for s in Panneaux.LINE_2:
 		var name: String = s[0]
-		var here: bool = name == Chapitre1.STATION
+		var here: bool = name == Chapitres.station(Enquete.chapter)
 		var unlocked := Enquete.unlocked_stations.has(name)
 		var b := _button(("> " if here else "  ") + ("• " if unlocked else "- ") + name, Callable())
 		b.add_theme_color_override("font_color", ACCENT if here else (TEXT if unlocked else DIM))
@@ -344,7 +344,7 @@ func _take_photo() -> void:
 			toast("Trop loin pour servir de preuve.")
 		elif Enquete.add_evidence(item.evidence_id, texture):
 			Enquete.add_photo(texture, item.evidence_id)
-			toast("Ajouté au dossier : " + Chapitre1.EVIDENCE[item.evidence_id].title)
+			toast("Ajouté au dossier : " + Chapitres.evidence(item.evidence_id).title)
 		else:
 			Enquete.add_photo(texture, item.evidence_id)
 			toast("Déjà dans le dossier.")

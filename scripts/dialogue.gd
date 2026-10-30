@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## Boîte de dialogue : répliques qui s'affichent lettre à lettre, puis choix de questions.
 ## À tout moment, on peut montrer une pièce du dossier. Les dialogues sont décrits dans
-## Chapitre1.DIALOGUES ; les conditions et effets passent par Enquete.check et Enquete.apply.
+## Chapitres.dialogue() ; les conditions et effets passent par Enquete.check et Enquete.apply.
 
 const BOX_SPEECH := Rect2(8, 160, 304, 74)
 const BOX_CHOICES := Rect2(8, 104, 304, 130)
@@ -42,7 +42,7 @@ func _connect_player() -> void:
 
 func start(who: Personnage) -> void:
 	_who = who
-	_data = Chapitre1.DIALOGUES[who.dialogue_id]
+	_data = Chapitres.dialogue(who.dialogue_id)
 	active = true
 	Enquete.in_dialogue = true
 	_box.show()

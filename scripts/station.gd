@@ -48,10 +48,13 @@ var trafic: Trafic
 
 
 ## À appeler en tête du _ready() de la station : matériaux et corps des collisions.
-func _begin() -> void:
+## `chapter` : le chapitre qui se joue ici (lancé directement depuis l'éditeur, on y saute).
+func _begin(chapter := 1) -> void:
 	add_to_group("lieu")
 	if not Enquete.started:   # lancé directement depuis l'éditeur, sans passer par le titre
 		Enquete.new_game()
+	if Enquete.chapter < chapter:
+		Enquete.start_chapter(chapter)
 	Sons.playing = true
 	# les paramètres globaux survivent au changement de scène : on éteint les zones
 	for z in ["zone2", "zone3"]:
@@ -74,6 +77,7 @@ func _add_trafic(node_name: String, tracks: Array, barriers: Array[CollisionShap
 	t.name = node_name
 	t.line = line
 	t.line_color = color
+	t.clock_start = Chapitres.start(Enquete.chapter)
 	t.transform = _frame
 	add_child(t)
 	t.setup(M, RY, PY - RY, tracks, barriers)

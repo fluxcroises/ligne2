@@ -1,13 +1,13 @@
 class_name Personnage
 extends Examinable
 ## Un personnage à qui parler : silhouette low-poly à la PS1, sans visage détaillé, faite de
-## quelques boîtes. Viser et appuyer sur E ouvre son dialogue (Chapitre1.DIALOGUES).
+## quelques boîtes. Viser et appuyer sur E ouvre son dialogue (Chapitres.dialogue).
 ## Il respire, et se tourne vers le détective pendant la conversation.
 
 const PSX_SHADER := preload("res://shaders/psx.gdshader")
 const BLANC := preload("res://textures/blanc.png")
 
-## Clé du dialogue dans Chapitre1.DIALOGUES.
+## Clé du dialogue (voir Chapitres.dialogue).
 var dialogue_id := ""
 ## Couleurs : veste, pantalon, peau, cheveux, et en option une casquette ou un bonnet.
 var look := {"coat": Color("#2a3346"), "pants": Color("#23262c"), "skin": Color("#a8785a"),

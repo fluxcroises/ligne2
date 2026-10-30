@@ -2,7 +2,6 @@ extends Control
 ## Écran titre : plaque émaillée « LIGNE 2 » sur une vue du quai de Monceau, puis
 ## Continuer (s'il y a une sauvegarde), Nouvelle partie, Réglages, Quitter.
 
-const MAIN := "res://scenes/main.tscn"
 const ENAMEL := Color("#e8d24a")     # jaune émail des plaques Guimard
 const FONTE := Color("#1f3a2e")      # vert fonte
 
@@ -79,12 +78,12 @@ func _button(text: String, action: Callable) -> void:
 
 func _continue() -> void:
 	if Enquete.load_game():
-		get_tree().change_scene_to_file(MAIN)
+		get_tree().change_scene_to_file(Chapitres.scene(Enquete.chapter))
 
 
 func _new_game() -> void:
 	Enquete.new_game()
-	get_tree().change_scene_to_file(MAIN)
+	get_tree().change_scene_to_file(Chapitres.scene(1))
 
 
 func _open_settings() -> void:

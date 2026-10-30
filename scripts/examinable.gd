@@ -5,7 +5,7 @@ extends StaticBody3D
 
 @export var title := ""
 @export_multiline var description := ""
-## Pièce du dossier (voir Chapitre1.EVIDENCE) ajoutée quand on photographie l'objet.
+## Pièce du dossier (voir Chapitres.evidence) ajoutée quand on photographie l'objet.
 @export var evidence_id := ""
 ## Distance maximale pour qu'une photo de l'objet compte comme preuve.
 @export var photo_range := 2.5
@@ -23,5 +23,5 @@ func describe() -> String:
 	if examine_evidence != "" and Enquete.add_evidence(examine_evidence):
 		var phone := get_tree().current_scene.get_node_or_null("Telephone")
 		if phone:
-			phone.toast("Ajouté au dossier : " + Chapitre1.EVIDENCE[examine_evidence].title)
+			phone.toast("Ajouté au dossier : " + Chapitres.evidence(examine_evidence).title)
 	return description

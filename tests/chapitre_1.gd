@@ -106,4 +106,11 @@ func _initialize() -> void:
 	for f in 60 * 18: await physics_frame
 	await shot("fin du chapitre")
 	print("chapitre fini : ", E.flags.get("chapitre_1_fini", false), "  stations : ", E.unlocked_stations)
+	# 8. Entrée : le chapitre 2 commence à Villiers
+	await press("ui_accept")
+	for f in 20: await process_frame
+	player = get_first_node_in_group("player")
+	var p: Vector3 = player.global_position
+	print("suite : ", current_scene.scene_file_path.get_file(), "  chapitre=", E.chapter, "  lieu=", get_first_node_in_group("lieu").place_name(p),
+		"  messages en attente de réseau=", E._outbox.size())
 	quit()

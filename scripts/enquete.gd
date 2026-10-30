@@ -63,9 +63,23 @@ func new_game() -> void:
 	reset()
 	started = true
 	_loading = true
-	for m in Chapitre1.PROLOGUE:
-		send_to_player(m.from, m.text, m.get("evidence", ""))
+	_prologue(1)
 	_loading = false
+
+
+## Passe au chapitre `n` : sa station est débloquée, son prologue arrive par message.
+func start_chapter(n: int) -> void:
+	chapter = n
+	pending_load = {}
+	var station := Chapitres.station(n)
+	if not unlocked_stations.has(station):
+		unlocked_stations.append(station)
+	_prologue(n)
+
+
+func _prologue(n: int) -> void:
+	for m in Chapitres.content(n).PROLOGUE:
+		send_to_player(m.from, m.text, m.get("evidence", ""))
 
 
 # --- Sauvegarde ----------------------------------------------------------------
@@ -111,7 +125,8 @@ func save_game() -> void:
 	f.store_string(JSON.stringify(data, "\t"))
 
 
-## Charge la sauvegarde ; la position et l'heure sont appliquées une fois Monceau chargée.
+## Charge la sauvegarde ; la position et l'heure sont appliquées une fois le lieu chargé
+## (la scène du chapitre : Chapitres.scene(chapter)).
 func load_game() -> bool:
 	var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
 	if not f:
@@ -162,7 +177,7 @@ func clock_text() -> String:
 ## Heure de jeu en minutes depuis minuit.
 func minutes() -> int:
 	var trafic := _trafic()
-	return trafic.minutes() if trafic else Chapitre1.START
+	return trafic.minutes() if trafic else Chapitres.start(chapter)
 
 
 func _trafic() -> Node:
@@ -186,9 +201,9 @@ func has_evidence(id: String) -> bool:
 
 ## Ajoute une pièce définie dans le chapitre ; renvoie false si elle y est déjà.
 func add_evidence(id: String, texture: Texture2D = null) -> bool:
-	if has_evidence(id) or not Chapitre1.EVIDENCE.has(id):
+	var def := Chapitres.evidence(id)
+	if has_evidence(id) or def.is_empty():
 		return false
-	var def: Dictionary = Chapitre1.EVIDENCE[id]
 	var item := {"id": id, "kind": def.kind, "title": def.title, "text": def.text,
 		"chapter": chapter, "texture": texture}
 	evidence.append(item)
@@ -264,7 +279,7 @@ func apply(node: Dictionary) -> Array[String]:
 		flags[f] = true
 	var id: String = node.get("evidence", "")
 	if id != "" and add_evidence(id):
-		added.append(Chapitre1.EVIDENCE[id].title)
+		added.append(Chapitres.evidence(id).title)
 	return added
 
 
@@ -273,7 +288,7 @@ func apply(node: Dictionary) -> Array[String]:
 ## Vérifie une déduction : les éléments reliés et la conclusion choisie.
 ## Renvoie {ok, text}.
 func try_deduction(id: String, elements: Array, conclusion: int) -> Dictionary:
-	for d in Chapitre1.DEDUCTIONS:
+	for d in Chapitres.deductions(chapter):
 		if d.id != id:
 			continue
 		var expected: Array = d.elements.duplicate()
