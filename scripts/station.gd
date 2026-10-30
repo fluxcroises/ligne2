@@ -412,6 +412,16 @@ func _sign_from_texture(tex: Texture2D) -> ShaderMaterial:
 	return m
 
 
+## La station suivante pour une rame qui quitte `here` vers `destination` (ligne 2, ou les
+## voisines de Villiers sur la ligne 3).
+static func next_station(here: String, destination: String) -> String:
+	var line3 := {"Pont de Levallois": "Malesherbes", "Gallieni": "Europe"}
+	if line3.has(destination):
+		return line3[destination]
+	var ahead := Panneaux.stations_towards(here, destination)
+	return ahead[1] if ahead.size() > 1 else destination
+
+
 ## Place un nœud dans le repère de construction courant.
 func _place(node: Node3D, pos: Vector3) -> void:
 	node.transform = _frame * Transform3D(Basis(), pos)

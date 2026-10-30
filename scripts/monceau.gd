@@ -62,7 +62,7 @@ func place_name(pos: Vector3) -> String:
 	var train: MF01 = trafic.train_at(pos) if trafic else null
 	if train:
 		if trafic.is_moving(train):
-			return "Rame MF01 · prochaine station : Monceau"
+			return "Rame MF01 · prochaine station : %s" % next_station("Monceau", train.destination)
 		return "Rame MF01 · direction %s" % train.destination
 	if pos.y < PFLOOR + 0.3:
 		return "Passage sous les voies · Monceau"
