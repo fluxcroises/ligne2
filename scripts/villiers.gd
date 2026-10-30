@@ -74,7 +74,7 @@ func _ready() -> void:
 	_under_lamps = [Vector3(TUBE_X, PY + 2.0, 18.0), Vector3(TUBE_X, PY + 2.0, 13.5), Vector3(TUBE_X, -2.6, 9.0),
 		Vector3(-19.0, -1.3, 4.0), Vector3(-19.0, -1.3, -1.5)]
 	for p in _boucle_lamps():
-		_under_lamps.append(LINE3 * p)
+		_under_lamps.append(LINE3 * p)   # (avant _begin : M n'existe pas encore, _boucle() n'en a pas besoin)
 	for l in LAMPS:
 		_lanterns.append(Vector3(l.x, 4.4, l.y))
 	for dz in [-0.7, 0.7]:
@@ -526,6 +526,13 @@ func set_local_open(on: bool) -> void:
 # voûté en courbe, une voie, une banquette le long du mur extérieur éclairée par quelques
 # lampes, et de vieilles voitures Sprague garées là, couvertes de tags.
 
+## La boucle (voir Station._build_loop) : ouverte face au couloir de service, le garde-fou
+## interrompu devant la porte ouverte de la voiture du milieu.
+func _boucle() -> Dictionary:
+	return {"c": BOUCLE_C, "r": BOUCLE_R, "a": BOUCLE_A, "walk": BOUCLE_WALK, "spring": BOUCLE_SPRING,
+		"openings": [[-PI / 2, (SERV.y - SERV.x) / 2]], "gaps": [[-PI / 2, 0.6]], "lamps": [-112.0, -97.0, -80.0, -66.0]}
+
+
 ## Point de la courbe à l'angle `a`, décalé de `r` vers l'extérieur (x, z locaux).
 static func _boucle_point(a: float, r: float) -> Vector2:
 	return BOUCLE_C + (BOUCLE_R + r) * Vector2(cos(a), sin(a))
@@ -536,35 +543,9 @@ static func _boucle_wall_z() -> float:
 	return BOUCLE_C.y - (BOUCLE_R + BOUCLE_WALK.y)
 
 
-## Angles des tronçons de la courbe ; l'ouverture du couloir tombe entre deux tronçons.
-static func _boucle_angles() -> Array[float]:
-	var half := ((SERV.y - SERV.x) / 2) / (BOUCLE_R + BOUCLE_WALK.y)
-	var mid := -PI / 2
-	var out: Array[float] = []
-	var n := 14
-	for i in n + 1:
-		out.append(lerpf(BOUCLE_A.x, mid - half, float(i) / n))
-	for i in n + 1:
-		out.append(lerpf(mid + half, BOUCLE_A.y, float(i) / n))
-	return out
-
-
-## Profil du tunnel (r vers l'extérieur, y) : mur intérieur, voûte, mur extérieur, banquette.
-static func _boucle_profile() -> Array:
-	var p := [Vector2(-2.0, RY), Vector2(-2.0, BOUCLE_SPRING)]
-	for i in range(1, 10):
-		var t := PI * i / 10
-		p.append(Vector2(0.3 - 2.3 * cos(t), BOUCLE_SPRING + 1.3 * sin(t)))
-	p.append_array([Vector2(BOUCLE_WALK.y, BOUCLE_SPRING), Vector2(BOUCLE_WALK.y, PY), Vector2(BOUCLE_WALK.x, PY), Vector2(BOUCLE_WALK.x, RY)])
-	return p
-
-
-## Lampes de la banquette, et une dans la voiture ouverte (repère local).
+## Lampes de la banquette, une dans la voiture ouverte, une dans le couloir (repère local).
 func _boucle_lamps() -> Array[Vector3]:
-	var out: Array[Vector3] = []
-	for deg in [-112.0, -97.0, -80.0, -66.0]:
-		var q := _boucle_point(deg_to_rad(deg), BOUCLE_WALK.y - 0.15)
-		out.append(Vector3(q.x, PY + 2.0, q.y))
+	var out := _loop_lamps(_boucle())
 	var c := _boucle_point(-PI / 2, -0.3)
 	out.append(Vector3(c.x, PY + 1.8, c.y))
 	out.append(Vector3((SERV.x + SERV.y) / 2, PY + 2.0, (ZB + _boucle_wall_z()) / 2))   # couloir de service
@@ -572,71 +553,7 @@ func _boucle_lamps() -> Array[Vector3]:
 
 
 func _build_boucle() -> void:
-	var angles := _boucle_angles()
-	var prof := _boucle_profile()
-	var outer := prof.size() - 4   # indice du segment du mur extérieur (de la naissance à la banquette)
-	var g := PsxGeo.empty()
-	for k in angles.size() - 1:
-		if is_equal_approx(angles[k], angles[k + 1]):
-			continue
-		var opening := angles[k] < -PI / 2 and angles[k + 1] > -PI / 2
-		var acc := 0.0
-		for i in prof.size() - 1:
-			var seg_len: float = prof[i].distance_to(prof[i + 1])
-			if not (opening and i == outer):
-				var base: int = g.p.size()
-				for corner in [[k, i], [k + 1, i], [k, i + 1], [k + 1, i + 1]]:
-					var a: float = angles[corner[0]]
-					var pr: Vector2 = prof[corner[1]]
-					var q := _boucle_point(a, pr.x)
-					var d: Vector2 = prof[i + 1] - prof[i]
-					g.p.append(Vector3(q.x, pr.y, q.y))
-					g.n.append((Vector3(cos(a), 0, sin(a)) * d.y - Vector3.UP * d.x).normalized())   # vers l'intérieur du tunnel
-					g.uv.append(Vector2(a * BOUCLE_R / 2.4, (acc + (seg_len if corner[1] == i + 1 else 0.0)) / 1.2))
-				g.i.append_array([base, base + 1, base + 2, base + 1, base + 3, base + 2])
-			acc += seg_len
-		# ballast et rails
-		var a0 := angles[k]
-		var a1 := angles[k + 1]
-		var ballast := PsxGeo.empty()
-		for corner in [[a0, -2.0], [a1, -2.0], [a0, BOUCLE_WALK.x], [a1, BOUCLE_WALK.x]]:
-			var q := _boucle_point(corner[0], corner[1])
-			ballast.p.append(Vector3(q.x, RY, q.y))
-			ballast.n.append(Vector3.UP)
-			ballast.uv.append(Vector2(corner[0] * BOUCLE_R / 1.2, corner[1] / 1.2))
-		ballast.i.append_array([0, 1, 2, 1, 3, 2])
-		add(ballast, M.voie, Vector3.ZERO)
-		for r in [-0.72, 0.72]:
-			var p0 := _boucle_point(a0, r)
-			var p1 := _boucle_point(a1, r)
-			var mid := (p0 + p1) / 2
-			add(PsxGeo.box(p0.distance_to(p1) + 0.02, 0.14, 0.08), M.rail, Vector3(mid.x, RY + 0.07, mid.y),
-				Vector3(0, atan2(-(p1.y - p0.y), p1.x - p0.x), 0))
-		# collisions : banquette, mur extérieur, garde-fou invisible au bord de la banquette
-		var w0 := _boucle_point(a0, (BOUCLE_WALK.x + BOUCLE_WALK.y) / 2)
-		var w1 := _boucle_point(a1, (BOUCLE_WALK.x + BOUCLE_WALK.y) / 2)
-		var yaw := atan2(-(w1.y - w0.y), w1.x - w0.x)
-		var length := w0.distance_to(w1) + 0.05
-		var wm := (w0 + w1) / 2
-		_solid(Vector3(length, 0.2, BOUCLE_WALK.y - BOUCLE_WALK.x + 0.1), Vector3(wm.x, PY - 0.1, wm.y), Vector3(0, yaw, 0))
-		if not opening:
-			var o := (_boucle_point(a0, BOUCLE_WALK.y + 0.1) + _boucle_point(a1, BOUCLE_WALK.y + 0.1)) / 2
-			_solid(Vector3(length, SERV_H, 0.2), Vector3(o.x, PY + SERV_H / 2, o.y), Vector3(0, yaw, 0))
-		var e := (_boucle_point(a0, BOUCLE_WALK.x - 0.05) + _boucle_point(a1, BOUCLE_WALK.x - 0.05)) / 2
-		var in_door := absf((a0 + a1) / 2 + PI / 2) * BOUCLE_R < 0.6
-		if not in_door:
-			_solid(Vector3(length, 2.0, 0.05), Vector3(e.x, PY + 1.0, e.y), Vector3(0, yaw, 0))
-	add(g, M.tunnel, Vector3.ZERO)
-	# aux deux bouts : le noir, et on ne passe pas
-	for a in [BOUCLE_A.x, BOUCLE_A.y]:
-		var c := _boucle_point(a, 0.3)
-		var t := Vector2(-sin(a), cos(a))
-		add(PsxGeo.plane(5.0, 5.0), M.noir, Vector3(c.x, (RY + BOUCLE_SPRING + 1.3) / 2, c.y), Vector3(0, atan2(-t.y, t.x) + PI / 2, 0))
-		var b := _boucle_point(a, (BOUCLE_WALK.x + BOUCLE_WALK.y) / 2)
-		_solid(Vector3(0.2, 2.5, 1.4), Vector3(b.x, PY + 1.25, b.y), Vector3(0, atan2(-t.y, t.x), 0))
-	# lampes de la banquette
-	for p in _boucle_lamps().slice(0, 4):   # (les deux dernières : la voiture et le couloir)
-		box(M.neon, 0.12, 0.12, 0.12, p.x, p.y, p.z)
+	_build_loop(_boucle())
 	_build_spragues()
 
 

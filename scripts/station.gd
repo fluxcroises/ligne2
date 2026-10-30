@@ -102,8 +102,8 @@ func _process(delta: float) -> void:
 	var ug := _player.global_position.y < -2.0
 	if ug != underground:
 		underground = ug
-		Enquete.underground = ug
 		_apply_fog()
+	Enquete.underground = ug and not _has_network_at(_player.global_position)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -127,6 +127,11 @@ func set_night(on: bool) -> void:
 	M.lanterne.set_shader_parameter("emission", Vector3(1.4, 1.0, 0.6) if on else Vector3.ZERO)
 	M.cand.set_shader_parameter("emission", Vector3(0.9, 0.8, 0.5) if on else Vector3.ZERO)
 	_apply_fog()
+
+
+## Le téléphone capte-t-il ici, sous terre ? Non, sauf dans les stations équipées (voir Nation).
+func _has_network_at(_pos: Vector3) -> bool:
+	return false
 
 
 ## Le shader n'éclaire qu'avec 8 lampes : s'il y en a plus, on garde les 8 plus proches du joueur.
@@ -767,3 +772,125 @@ func _build_gate_row(xl: float, xr: float, z: float, y: float, n := 4) -> void:
 	var end_x := last + 1.0
 	if xr > end_x:
 		_solid(Vector3(xr - end_x, 1.0, 1.2), Vector3((end_x + xr) / 2, y + 0.5, z))   # bout de ligne
+
+
+
+# --- Boucle de retournement ----------------------------------------------------------
+# Un tunnel voûté en courbe, à voie unique, avec une banquette le long du mur extérieur (Villiers,
+# Nation). `b` le décrit : c (centre, x z), r (rayon de l'axe de la voie), a (angles de début et
+# de fin), walk (banquette, de r = walk.x à walk.y vers l'extérieur), spring (naissance de la
+# voûte), openings ([angle, demi-largeur en m] : ouvertures dans le mur extérieur, vers un couloir
+# ou une niche), gaps ([angle, demi-largeur] : trouées dans le garde-fou du bord de la banquette),
+# lamps (angles des lampes de la banquette, en degrés).
+
+static func _loop_point(b: Dictionary, a: float, r: float) -> Vector2:
+	return (b.c as Vector2) + (b.r + r) * Vector2(cos(a), sin(a))
+
+
+## Angles des tronçons ; les bords des ouvertures tombent entre deux tronçons.
+static func _loop_angles(b: Dictionary) -> Array[float]:
+	var cuts: Array[float] = [b.a.x, b.a.y]
+	for o in b.openings:
+		var h: float = o[1] / (b.r + b.walk.y)
+		cuts.append_array([o[0] - h, o[0] + h])
+	cuts.sort()
+	var out: Array[float] = []
+	for k in cuts.size() - 1:
+		var n := maxi(1, ceili((cuts[k + 1] - cuts[k]) * b.r / 3.0))
+		for i in n:
+			out.append(lerpf(cuts[k], cuts[k + 1], float(i) / n))
+	out.append(cuts.back())
+	return out
+
+
+static func _loop_in(list: Array, a: float, r: float) -> bool:
+	for o in list:
+		if absf(a - o[0]) * r < o[1]:
+			return true
+	return false
+
+
+## Profil du tunnel (r vers l'extérieur, y) : mur intérieur, voûte, mur extérieur, banquette.
+static func _loop_profile(b: Dictionary) -> Array:
+	var spring: float = b.spring
+	var p := [Vector2(-2.0, RY), Vector2(-2.0, spring)]
+	for i in range(1, 10):
+		var t := PI * i / 10
+		p.append(Vector2(0.3 - 2.3 * cos(t), spring + 1.3 * sin(t)))
+	p.append_array([Vector2(b.walk.y, spring), Vector2(b.walk.y, PY), Vector2(b.walk.x, PY), Vector2(b.walk.x, RY)])
+	return p
+
+
+## Lampes de la banquette, dans le repère de construction.
+func _loop_lamps(b: Dictionary) -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	for deg in b.lamps:
+		var q := _loop_point(b, deg_to_rad(deg), b.walk.y - 0.15)
+		out.append(Vector3(q.x, PY + 2.0, q.y))
+	return out
+
+
+func _build_loop(b: Dictionary) -> void:
+	var angles := _loop_angles(b)
+	var prof := _loop_profile(b)
+	var outer := prof.size() - 4   # indice du segment du mur extérieur (de la naissance à la banquette)
+	var walk: Vector2 = b.walk
+	var spring: float = b.spring
+	var g := PsxGeo.empty()
+	for k in angles.size() - 1:
+		var a0 := angles[k]
+		var a1 := angles[k + 1]
+		var opening := _loop_in(b.openings, (a0 + a1) / 2, b.r + walk.y)
+		var acc := 0.0
+		for i in prof.size() - 1:
+			var seg_len: float = prof[i].distance_to(prof[i + 1])
+			if not (opening and i == outer):
+				var base: int = g.p.size()
+				for corner in [[a0, i], [a1, i], [a0, i + 1], [a1, i + 1]]:
+					var a: float = corner[0]
+					var pr: Vector2 = prof[corner[1]]
+					var q := _loop_point(b, a, pr.x)
+					var d: Vector2 = prof[i + 1] - prof[i]
+					g.p.append(Vector3(q.x, pr.y, q.y))
+					g.n.append((Vector3(cos(a), 0, sin(a)) * d.y - Vector3.UP * d.x).normalized())   # vers l'intérieur du tunnel
+					g.uv.append(Vector2(a * b.r / 2.4, (acc + (seg_len if corner[1] == i + 1 else 0.0)) / 1.2))
+				g.i.append_array([base, base + 1, base + 2, base + 1, base + 3, base + 2])
+			acc += seg_len
+		# ballast et rails
+		var ballast := PsxGeo.empty()
+		for corner in [[a0, -2.0], [a1, -2.0], [a0, walk.x], [a1, walk.x]]:
+			var q := _loop_point(b, corner[0], corner[1])
+			ballast.p.append(Vector3(q.x, RY, q.y))
+			ballast.n.append(Vector3.UP)
+			ballast.uv.append(Vector2(corner[0] * b.r / 1.2, corner[1] / 1.2))
+		ballast.i.append_array([0, 1, 2, 1, 3, 2])
+		add(ballast, M.voie, Vector3.ZERO)
+		for r in [-0.72, 0.72]:
+			var p0 := _loop_point(b, a0, r)
+			var p1 := _loop_point(b, a1, r)
+			var mid := (p0 + p1) / 2
+			add(PsxGeo.box(p0.distance_to(p1) + 0.02, 0.14, 0.08), M.rail, Vector3(mid.x, RY + 0.07, mid.y),
+				Vector3(0, atan2(-(p1.y - p0.y), p1.x - p0.x), 0))
+		# collisions : banquette, mur extérieur, garde-fou invisible au bord de la banquette
+		var w0 := _loop_point(b, a0, (walk.x + walk.y) / 2)
+		var w1 := _loop_point(b, a1, (walk.x + walk.y) / 2)
+		var yaw := atan2(-(w1.y - w0.y), w1.x - w0.x)
+		var length := w0.distance_to(w1) + 0.05
+		var wm := (w0 + w1) / 2
+		_solid(Vector3(length, 0.2, walk.y - walk.x + 0.1), Vector3(wm.x, PY - 0.1, wm.y), Vector3(0, yaw, 0))
+		if not opening:
+			var o := (_loop_point(b, a0, walk.y + 0.1) + _loop_point(b, a1, walk.y + 0.1)) / 2
+			_solid(Vector3(length, spring - PY, 0.2), Vector3(o.x, (PY + spring) / 2, o.y), Vector3(0, yaw, 0))
+		if not _loop_in(b.gaps, (a0 + a1) / 2, b.r):
+			var e := (_loop_point(b, a0, walk.x - 0.05) + _loop_point(b, a1, walk.x - 0.05)) / 2
+			_solid(Vector3(length, 2.0, 0.05), Vector3(e.x, PY + 1.0, e.y), Vector3(0, yaw, 0))
+	add(g, M.tunnel, Vector3.ZERO)
+	# aux deux bouts : le noir, et on ne passe pas
+	for a in [b.a.x, b.a.y]:
+		var c := _loop_point(b, a, 0.3)
+		var t := Vector2(-sin(a), cos(a))
+		add(PsxGeo.plane(5.0, 5.0), M.noir, Vector3(c.x, (RY + spring + 1.3) / 2, c.y), Vector3(0, atan2(-t.y, t.x) + PI / 2, 0))
+		var e := _loop_point(b, a, (walk.x + walk.y) / 2)
+		_solid(Vector3(0.2, 2.5, 1.4), Vector3(e.x, PY + 1.25, e.y), Vector3(0, atan2(-t.y, t.x), 0))
+	for p in _loop_lamps(b):
+		box(M.neon, 0.12, 0.12, 0.12, p.x, p.y, p.z)

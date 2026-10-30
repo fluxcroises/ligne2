@@ -94,6 +94,19 @@ Retenues comme modèles ; aucune n'est reproduite dans le jeu.
   `treillis.png`, `brique.png`, `sigle_jaures.png`, `locotracteur.png`) et plaque « Jaurès » : dessinés pour le jeu.
   Le dépôt des trains de travaux sous le viaduc est inventé.
 
+### Références pour Nation (chapitre 5)
+
+Retenues comme modèles ; aucune n'est reproduite dans le jeu.
+
+- **Quais de la ligne 2** : « Ligne-2-Nation-2.jpg » et « Ligne-2-Nation-3.jpg », par Pline, Wikimedia Commons,
+  licence [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+  <https://commons.wikimedia.org/wiki/File:Ligne-2-Nation-2.jpg>
+- **Le tunnel du terminus** : « F9505 Paris 11e et 12e station Nation ligne 2 terminus encours.jpg », par Mbzt,
+  licence [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+  <https://commons.wikimedia.org/wiki/File:F9505_Paris_11e_et_12e_station_Nation_ligne_2_terminus_encours.jpg>
+- Plaques « Nation » et « Local 14 » (`nom_nation.png`, `local_14.png`) : dessinées pour le jeu. Les quais sont
+  droits dans le jeu (en courbe dans la réalité) ; le local 14 est inventé.
+
 ### Photos de Lewis
 
 Les textures de `textures/` issues de `textures_monceau_ps1.zip` ont été tirées des photos de Lewis.

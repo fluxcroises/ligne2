@@ -1,0 +1,69 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="0_main"]
+[ext_resource type="Script" path="res://scripts/nation.gd" id="1_station"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="3_hud"]
+[ext_resource type="Shader" path="res://shaders/psx_post.gdshader" id="4_post"]
+[ext_resource type="Script" path="res://scripts/telephone.gd" id="5_phone"]
+[ext_resource type="Script" path="res://scripts/dialogue.gd" id="6_dialogue"]
+[ext_resource type="Script" path="res://scripts/pause.gd" id="7_pause"]
+
+[sub_resource type="Environment" id="Environment_station"]
+background_mode = 1
+background_color = Color(0.04, 0.06, 0.11, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_post"]
+shader = ExtResource("4_post")
+
+[node name="Main" type="Node"]
+script = ExtResource("0_main")
+
+[node name="Monde" type="SubViewport" parent="." groups=["monde"]]
+handle_input_locally = true
+size = Vector2i(640, 480)
+render_target_update_mode = 4
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Monde"]
+environment = SubResource("Environment_station")
+
+[node name="Nation" type="Node3D" parent="Monde"]
+script = ExtResource("1_station")
+
+[node name="Player" parent="Monde" instance=ExtResource("2_player")]
+position = Vector3(-20.0, -6.43, 31.6)
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="PostProcess" type="CanvasLayer" parent="Monde"]
+layer = 1
+
+[node name="Psx15bit" type="ColorRect" parent="Monde/PostProcess"]
+material = SubResource("ShaderMaterial_post")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Ecran" type="TextureRect" parent="."]
+texture_filter = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("3_hud")
+
+[node name="Telephone" type="CanvasLayer" parent="."]
+script = ExtResource("5_phone")
+
+[node name="Dialogue" type="CanvasLayer" parent="."]
+script = ExtResource("6_dialogue")
+
+[node name="Pause" type="CanvasLayer" parent="."]
+script = ExtResource("7_pause")

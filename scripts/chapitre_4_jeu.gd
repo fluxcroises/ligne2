@@ -40,4 +40,5 @@ func _check_end() -> void:
 	var trafic: Trafic = _station.trafic
 	var train := trafic.train_at(player.global_position) if player else null
 	if train and train.destination == "Nation" and trafic.is_moving(train):
-		_finish("Nation", "Marc Delorme invente de faux trains de travaux pour transporter le butin, et Franck Roussel les conduit. Le soir de la disparition, le locotracteur emmenait Karim vers Nation. Vivant.")
+		_finish("Nation", "Marc Delorme invente de faux trains de travaux pour transporter le butin, et Franck Roussel les conduit. Le soir de la disparition, le locotracteur emmenait Karim vers Nation. Vivant.",
+			_next_chapter)
